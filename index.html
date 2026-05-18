@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS Stream — Pokémon HGSS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash-screen" class="splash">
+    <div class="splash-content">
+        <div class="pokeball-loader">
+            <div class="pb-top"></div>
+            <div class="pb-mid"></div>
+            <div class="pb-bot"></div>
+        </div>
+        <h1 class="splash-title">DS STREAM</h1>
+        <p class="splash-sub">HeartGold &amp; SoulSilver</p>
+        <button id="btn-enter" class="btn-enter">▶ PRESS START</button>
+    </div>
+</div>
+
+<!-- App -->
+<div id="app" class="app hidden">
+    <header class="header">
+        <div class="hd-left">
+            <span class="hd-logo">◉</span>
+            <span class="hd-title">DS STREAM</span>
+            <span class="hd-badge">HGSS</span>
+        </div>
+        <div class="hd-right">
+            <button id="btn-toggle-link" class="btn-icon active" title="Connexion Câble Link">🔌</button>
+            <button id="btn-fullscreen" class="btn-icon" title="Plein écran">⛶</button>
+            <button id="btn-settings" class="btn-icon" title="Paramètres">⚙</button>
+        </div>
+    </header>
+
+    <!-- Sleek Link Cable Multiplayer Panel -->
+    <div class="link-cable-panel" id="link-cable-bar">
+        <div class="lc-info">
+            <span class="lc-icon">🔌</span>
+            <span class="lc-title">CÂBLE LINK</span>
+            <div class="lc-status-container">
+                <span class="lc-status-dot offline" id="lc-status-light"></span>
+                <span class="lc-status-text" id="lc-status-text">Hors ligne</span>
+            </div>
+        </div>
+        <div class="lc-controls">
+            <!-- Offline Mode -->
+            <div class="lc-sub-group" id="lc-group-offline">
+                <button class="btn-lc btn-lc-host" id="btn-lc-host">Héberger</button>
+                <span class="lc-sep">ou</span>
+                <div class="lc-input-wrapper">
+                    <input type="text" class="lc-input" id="lc-join-code" placeholder="Code..." maxlength="6">
+                    <button class="btn-lc btn-lc-join" id="btn-lc-join">Rejoindre</button>
+                </div>
+            </div>
+            <!-- Hosting Mode -->
+            <div class="lc-sub-group hidden" id="lc-group-hosting">
+                <span class="lc-msg">Code à donner :</span>
+                <span class="lc-code-display" id="lc-my-code">------</span>
+                <button class="btn-lc btn-lc-cancel" id="btn-lc-cancel-host">Annuler</button>
+            </div>
+            <!-- Connected Mode -->
+            <div class="lc-sub-group hidden" id="lc-group-connected">
+                <span class="lc-msg success" id="lc-conn-msg">Partie synchronisée !</span>
+                <button class="btn-lc btn-lc-disconnect" id="btn-lc-disconnect">Débrancher</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <!-- Stream panels -->
+        <main class="streams-container">
+
+            <!-- Player 1 HeartGold -->
+            <div class="player-panel heartgold">
+                <div class="panel-header">
+                    <div class="pinfo">
+                        <div class="pavatar gold-av">★</div>
+                        <input class="player-name" id="name-1" value="Joueur 1" maxlength="14">
+                        <span class="vtag tag-gold">HeartGold</span>
+                    </div>
+                    <div class="pcontrols">
+                        <select id="camera-select-1" class="cam-select"><option value="">Caméra...</option></select>
+                        <button class="btn-cam" id="btn-cam-1" title="Caméra (1)">📷</button>
+                        <button class="btn-mirror" id="btn-mirror-1" title="Miroir">⇌</button>
+                    </div>
+                </div>
+                <div class="ds-wrap">
+                    <div class="ds-screen gold-screen" id="screen-1">
+                        <video id="video-1" autoplay playsinline muted></video>
+                        <div class="no-signal" id="no-signal-1">
+                            <div class="ns-icon">📷</div>
+                            <p>Pas de signal</p>
+                            <span>Clique sur 📷 ou appuie sur <kbd>1</kbd></span>
+                        </div>
+                    </div>
+                    <div class="ds-hinge gold-hinge"><div class="hinge-dot gold-dot"></div></div>
+                    <div class="ds-stats">
+                        <span class="stat"><small>RES</small><b id="res-1">—</b></span>
+                        <span class="stat"><small>FPS</small><b id="fps-1">—</b></span>
+                        <span class="stat"><small>STATUS</small><b class="s-off" id="status-1">OFF</b></span>
+                    </div>
+                </div>
+            <!-- Counter P1 -->
+            <div class="shiny-counter" id="counter-1">
+                <div class="counter-pokemon" id="counter-poke-1">
+                    <button class="btn-pick-hunt" id="btn-pick-hunt-1" data-player="1">🔍 Choisir le Pokémon chassé</button>
+                </div>
+                <div class="counter-controls">
+                    <button class="btn-step minus" id="btn-minus-1" data-player="1">−</button>
+                    <div class="counter-display">
+                        <span class="counter-value" id="count-val-1">0</span>
+                        <span class="counter-label">encounters</span>
+                    </div>
+                    <button class="btn-step plus" id="btn-plus-1" data-player="1">+</button>
+                </div>
+                <div class="counter-step-row">
+                    <span class="step-label">Incrément :</span>
+                    <button class="btn-step-preset" data-player="1" data-val="1">+1</button>
+                    <button class="btn-step-preset active" data-player="1" data-val="1" id="preset-active-1">×1</button>
+                    <input type="number" class="step-input" id="step-input-1" value="1" min="1" max="9999">
+                    <button class="btn-reset" id="btn-reset-1" data-player="1" title="Remettre à zéro">↺</button>
+                </div>
+            </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="vs-divider"><span>VS</span></div>
+
+            <!-- Player 2 SoulSilver -->
+            <div class="player-panel soulsilver">
+                <div class="panel-header">
+                    <div class="pinfo">
+                        <div class="pavatar silver-av">★</div>
+                        <input class="player-name" id="name-2" value="Joueur 2" maxlength="14">
+                        <span class="vtag tag-silver">SoulSilver</span>
+                    </div>
+                    <div class="pcontrols">
+                        <select id="camera-select-2" class="cam-select"><option value="">Caméra...</option></select>
+                        <button class="btn-cam" id="btn-cam-2" title="Caméra (2)">📷</button>
+                        <button class="btn-mirror" id="btn-mirror-2" title="Miroir">⇌</button>
+                    </div>
+                </div>
+                <div class="ds-wrap">
+                    <div class="ds-screen silver-screen" id="screen-2">
+                        <video id="video-2" autoplay playsinline muted></video>
+                        <div class="no-signal" id="no-signal-2">
+                            <div class="ns-icon">📷</div>
+                            <p>Pas de signal</p>
+                            <span>Clique sur 📷 ou appuie sur <kbd>2</kbd></span>
+                        </div>
+                    </div>
+                    <div class="ds-hinge silver-hinge"><div class="hinge-dot silver-dot"></div></div>
+                    <div class="ds-stats">
+                        <span class="stat"><small>RES</small><b id="res-2">—</b></span>
+                        <span class="stat"><small>FPS</small><b id="fps-2">—</b></span>
+                        <span class="stat"><small>STATUS</small><b class="s-off" id="status-2">OFF</b></span>
+                    </div>
+                </div>
+            <!-- Counter P2 -->
+            <div class="shiny-counter" id="counter-2">
+                <div class="counter-pokemon" id="counter-poke-2">
+                    <button class="btn-pick-hunt" id="btn-pick-hunt-2" data-player="2">🔍 Choisir le Pokémon chassé</button>
+                </div>
+                <div class="counter-controls">
+                    <button class="btn-step minus" id="btn-minus-2" data-player="2">−</button>
+                    <div class="counter-display">
+                        <span class="counter-value" id="count-val-2">0</span>
+                        <span class="counter-label">encounters</span>
+                    </div>
+                    <button class="btn-step plus" id="btn-plus-2" data-player="2">+</button>
+                </div>
+                <div class="counter-step-row">
+                    <span class="step-label">Incrément :</span>
+                    <button class="btn-step-preset" data-player="2" data-val="1">+1</button>
+                    <button class="btn-step-preset active" data-player="2" data-val="1" id="preset-active-2">×1</button>
+                    <input type="number" class="step-input" id="step-input-2" value="1" min="1" max="9999">
+                    <button class="btn-reset" id="btn-reset-2" data-player="2" title="Remettre à zéro">↺</button>
+                </div>
+            </div>
+            </div>
+        </main>
+
+        <!-- Shiny Sidebar -->
+        <aside class="shiny-sidebar">
+            <div class="sidebar-title">✨ Shinys</div>
+
+            <!-- Player 1 Shinys -->
+            <div class="shiny-section">
+                <div class="shiny-player-label gold-label" id="shiny-label-1">Joueur 1 — HeartGold</div>
+                <div class="shiny-grid" id="shiny-grid-1">
+                    <div class="shiny-slot" data-player="1" data-slot="0"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="1" data-slot="1"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="1" data-slot="2"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="1" data-slot="3"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="1" data-slot="4"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="1" data-slot="5"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                </div>
+            </div>
+
+            <div class="sidebar-sep"></div>
+
+            <!-- Player 2 Shinys -->
+            <div class="shiny-section">
+                <div class="shiny-player-label silver-label" id="shiny-label-2">Joueur 2 — SoulSilver</div>
+                <div class="shiny-grid" id="shiny-grid-2">
+                    <div class="shiny-slot" data-player="2" data-slot="0"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="2" data-slot="1"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="2" data-slot="2"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="2" data-slot="3"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="2" data-slot="4"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="2" data-slot="5"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="modal hidden">
+        <div class="modal-bg"></div>
+        <div class="modal-box">
+            <div class="modal-head"><h2>⚙️ Paramètres</h2><button id="btn-close-set" class="btn-close">✕</button></div>
+            <div class="modal-body">
+                <div class="set-group">
+                    <label>Ratio d'écran</label>
+                    <div class="set-row">
+                        <button class="btn-opt active" data-ratio="4/3">4:3 DS</button>
+                        <button class="btn-opt" data-ratio="16/9">16:9</button>
+                        <button class="btn-opt" data-ratio="1/1">1:1</button>
+                    </div>
+                </div>
+                <div class="set-group">
+                    <label>Mode stream (masque l'UI)</label>
+                    <div class="set-row">
+                        <label class="toggle"><input type="checkbox" id="tog-stream"><span class="tog-slider"></span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pokémon Picker Modal -->
+    <div id="modal-picker" class="modal hidden">
+        <div class="modal-bg"></div>
+        <div class="modal-box picker-box">
+            <div class="modal-head">
+                <h2>✨ Choisir un Shiny</h2>
+                <button id="btn-close-pick" class="btn-close">✕</button>
+            </div>
+            <input type="text" id="poke-search" class="poke-search" placeholder="Chercher un Pokémon... (ex: Pikachu)">
+            <div id="poke-results" class="poke-results"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <span>Pokémon HeartGold &amp; SoulSilver Stream Overlay</span>
+        <span class="footer-hint">💡 <kbd>1</kbd><kbd>2</kbd> caméras · <kbd>S</kbd> settings · <kbd>M</kbd> mode stream</span>
+    </footer>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

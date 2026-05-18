@@ -1,0 +1,37 @@
+{
+  "name": "ds-stream-hgss",
+  "version": "1.0.0",
+  "description": "DS Stream Overlay — Pokémon HeartGold & SoulSilver",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.dsstream.hgss",
+    "productName": "DS Stream HGSS",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "installerHeaderIcon": "assets/icon.png"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/electron*/**",
+      "!dist/**",
+      "!*.md"
+    ],
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^25.0.0"
+  }
+}
