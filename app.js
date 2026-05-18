@@ -23,7 +23,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.4';
+const CURRENT_VERSION = 'v1.5';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -584,6 +584,7 @@ function broadcastState() {
   const localPlayer = state.peerRole === 'host' ? 1 : 2;
   state.conn.send({
     type: 'state-sync',
+    role: state.peerRole, // Send peer role so the remote side routes it to P1 or P2 correctly!
     name: $(`name-${localPlayer}`).value,
     count: state.counts[localPlayer],
     huntPoke: state.huntPoke[localPlayer],

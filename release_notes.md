@@ -1,11 +1,10 @@
-## ◉ DS STREAM — HEARTGOLD & SOULSILVER (V1.4)
+## ◉ DS STREAM — HEARTGOLD & SOULSILVER (V1.5)
 
-Cette mise à jour rapide introduit le **Rôle Local en mode Duo VS** et le **verrouillage intelligent des actions** ! 🎮🔒
+Cette version corrige le **bug critique de clonage et de synchronisation des compteurs en mode Duo P2P** (Câble Link) ! 👾🐛⚡
 
-### 🌟 Nouveautés de la version 1.4 :
-- **Choix du rôle en Duo :** Tu peux maintenant choisir dans les **Paramètres (engrenage)** si tu joues sur **HeartGold (Gauche)**, sur **SoulSilver (Droite)**, ou **les deux** (Contrôle total) !
-- **Verrouillage intelligent (.locked-ui) :**
-  - Si tu choisis d'être **HeartGold uniquement**, le côté SoulSilver se grise élégamment à 45% d'opacité, passe en noir et blanc partiel et ses contrôles deviennent **complètement inclickables** (compteur, presets de pas, changement de shiny recherché, slots, caméra, bouton miroir) ! Impossible de modifier accidentellement la partie de ton pote.
-  - Même chose à l'inverse si tu es **SoulSilver uniquement** !
-  - Choisis **Les deux** pour garder un contrôle local complet si tu joues aux deux sur le même PC.
-- **Persistence instantanée :** Ton rôle en Duo est automatiquement sauvegardé pour être conservé lors du prochain lancement de l'application !
+### 🌟 Correctifs et Améliorations de la version 1.5 :
+- **Routage P2P Parfait (Fin du bug de clonage) :** 
+  - Auparavant, le rôle de l'émetteur (`role`) n'était pas envoyé dans les messages de synchronisation P2P. Le récepteur interprétait donc tous les messages entrants comme appartenant à Player 2, clonant ainsi les Pokémon et écrasant les compteurs de SoulSilver à tort.
+  - **Résolution :** L'émetteur envoie désormais son rôle explicite (`host` pour P1 ou `joiner` pour P2). Le récepteur route les informations vers la bonne console (HeartGold ou SoulSilver) sans aucune collision !
+- **Indépendance des Compteurs :** Le compteur de l'hôte contrôle uniquement l'écran HeartGold, et celui de l'invité contrôle uniquement l'écran SoulSilver. Tu vois son compteur évoluer en temps réel sans jamais affecter le tien !
+- **Intégration d'Auto-Updater :** La version est officiellement taggée à `v1.5` pour signaler à tous tes amis qu'ils peuvent télécharger la mise à jour corrective en direct via le bouton du launcher !
