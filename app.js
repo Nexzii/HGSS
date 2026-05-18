@@ -27,7 +27,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.8';
+const CURRENT_VERSION = 'v1.9';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -860,7 +860,7 @@ $('btn-lc-host').addEventListener('click', () => {
   });
 
   state.peer.on('error', err => {
-    alert('Erreur réseau (Hôte) : ' + err.type);
+    showCustomAlert('Erreur réseau (Hôte) : ' + err.type);
     disconnectMultiplayer();
   });
 });
@@ -871,7 +871,7 @@ $('btn-lc-disconnect').addEventListener('click', disconnectMultiplayer);
 $('btn-lc-join').addEventListener('click', () => {
   const code = joinCodeInput.value.trim();
   if (code.length !== 6 || isNaN(code)) {
-    alert('Le code doit comporter 6 chiffres !');
+    showCustomAlert('Le code doit comporter 6 chiffres !');
     return;
   }
 
@@ -900,7 +900,7 @@ $('btn-lc-join').addEventListener('click', () => {
   });
 
   state.peer.on('error', err => {
-    alert('Impossible de rejoindre cette partie. Vérifie le code !');
+    showCustomAlert('Impossible de rejoindre cette partie. Vérifie le code !');
     disconnectMultiplayer();
   });
 });
