@@ -9,6 +9,7 @@ const state = {
   steps:{1:1, 2:1},
   huntPoke:{1:null, 2:null},
   pickerMode:'shiny', // 'shiny' | 'hunt'
+  localRole:'both', // 'hg' | 'ss' | 'both'
   // Câble Link / PeerJS variables
   peer:null,
   conn:null,
@@ -22,7 +23,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.2';
+const CURRENT_VERSION = 'v1.4';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -55,6 +56,35 @@ async function checkUpdates() {
   }
 }
 
+// Helper to check if a player console panel is locked for the local user
+function isPlayerLocked(p) {
+  const isMulti = !!state.conn;
+  if (isMulti) {
+    if (state.peerRole === 'host' && p === 2) return true;
+    if (state.peerRole === 'joiner' && p === 1) return true;
+  } else {
+    if (state.localRole === 'hg' && p === 2) return true;
+    if (state.localRole === 'ss' && p === 1) return true;
+  }
+  return false;
+}
+
+// Local Role Setter
+function setLocalRole(role) {
+  state.localRole = role;
+
+  // Sync active states in Settings Modal
+  ['hg', 'ss', 'both'].forEach(r => {
+    const btn = $(`btn-set-role-${r}`);
+    if (btn) {
+      btn.classList.toggle('active', r === role);
+    }
+  });
+
+  updateUILocks();
+  saveState();
+}
+
 // Mode Selector Setter
 function setGameMode(mode) {
   activeGameMode = mode;
@@ -68,6 +98,16 @@ function setGameMode(mode) {
     document.body.classList.add('mode-solo-ss');
   } else {
     document.body.classList.add('mode-duo-vs');
+  }
+
+  // Show/Hide local role selector group based on layout mode
+  const roleGroup = $('set-group-role');
+  if (roleGroup) {
+    if (mode === 'duo-vs') {
+      roleGroup.style.display = 'block';
+    } else {
+      roleGroup.style.display = 'none';
+    }
   }
 
   // Sync active states on launcher cards
@@ -119,6 +159,16 @@ function launchApp() {
   }
 });
 
+// Bind Settings Modal local role selection clicks
+['hg', 'ss', 'both'].forEach(r => {
+  const btn = $(`btn-set-role-${r}`);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      setLocalRole(r);
+    });
+  }
+});
+
 // Initialize on page load
 (function initLauncher() {
   checkUpdates();
@@ -153,13 +203,11 @@ navigator.mediaDevices.addEventListener('devicechange',async()=>{
   $(`camera-select-${p}`).addEventListener('change',()=>{if(state.streams[p])startCam(p);});
 });
 async function toggleCam(p){
-  if(state.peerRole==='host' && p===2) return;
-  if(state.peerRole==='joiner' && p===1) return;
+  if(isPlayerLocked(p)) return;
   state.streams[p]?stopCam(p):await startCam(p);
 }
 async function startCam(p){
-  if(state.peerRole==='host' && p===2) return;
-  if(state.peerRole==='joiner' && p===1) return;
+  if(isPlayerLocked(p)) return;
   const devId=$(`camera-select-${p}`).value;
   try{
     const stream=await navigator.mediaDevices.getUserMedia({video:devId?{deviceId:{exact:devId},width:{ideal:1280},height:{ideal:960}}:{width:{ideal:1280}},audio:false});
@@ -279,8 +327,7 @@ function shinyUrl(id){return `https://raw.githubusercontent.com/PokeAPI/sprites/
 
 // ── PICKER ──
 function openPicker(player,slot){
-  if(state.peerRole==='host' && player===2) return;
-  if(state.peerRole==='joiner' && player===1) return;
+  if(isPlayerLocked(player)) return;
   state.picker={player,slot};
   $('modal-picker').classList.remove('hidden');
   $('poke-search').value='';
@@ -341,8 +388,7 @@ function renderShinySlot(player,slot){
       <button class="slot-clear">✕</button>`;
     el.querySelector('.slot-clear').addEventListener('click',ev=>{
       ev.stopPropagation();
-      if(state.peerRole==='host' && player===2) return;
-      if(state.peerRole==='joiner' && player===1) return;
+      if(isPlayerLocked(player)) return;
       state.shinys[player][slot]=null;
       renderShinySlot(player,slot);
       el.addEventListener('click',()=>openPicker(player,slot));
@@ -417,21 +463,18 @@ function openHuntPicker(p){
 [1,2].forEach(p=>{
   // + / -
   $(`btn-plus-${p}`).addEventListener('click',()=>{
-    if(state.peerRole==='host' && p===2) return;
-    if(state.peerRole==='joiner' && p===1) return;
+    if(isPlayerLocked(p)) return;
     state.counts[p]=Math.max(0,state.counts[p]+state.steps[p]);
     updateCounterUI(p);saveState();broadcastState();
   });
   $(`btn-minus-${p}`).addEventListener('click',()=>{
-    if(state.peerRole==='host' && p===2) return;
-    if(state.peerRole==='joiner' && p===1) return;
+    if(isPlayerLocked(p)) return;
     state.counts[p]=Math.max(0,state.counts[p]-state.steps[p]);
     updateCounterUI(p);saveState();broadcastState();
   });
   // Reset
   $(`btn-reset-${p}`).addEventListener('click',()=>{
-    if(state.peerRole==='host' && p===2) return;
-    if(state.peerRole==='joiner' && p===1) return;
+    if(isPlayerLocked(p)) return;
     if(confirm(`Remettre le compteur de ${$(`name-${p}`).value||'Joueur '+p} à 0 ?`)){
       state.counts[p]=0;updateCounterUI(p);saveState();broadcastState();
     }
@@ -439,8 +482,7 @@ function openHuntPicker(p){
   // Step presets
   document.querySelectorAll(`.btn-step-preset[data-player="${p}"]`).forEach(btn=>{
     btn.addEventListener('click',()=>{
-      if(state.peerRole==='host' && p===2) return;
-      if(state.peerRole==='joiner' && p===1) return;
+      if(isPlayerLocked(p)) return;
       const v=parseInt(btn.dataset.val)||1;
       state.steps[p]=v;
       $(`step-input-${p}`).value=v;
@@ -451,8 +493,7 @@ function openHuntPicker(p){
   });
   // Custom step input
   $(`step-input-${p}`).addEventListener('input',e=>{
-    if(state.peerRole==='host' && p===2) return;
-    if(state.peerRole==='joiner' && p===1) return;
+    if(isPlayerLocked(p)) return;
     const v=Math.max(1,parseInt(e.target.value)||1);
     state.steps[p]=v;
     document.querySelectorAll(`.btn-step-preset[data-player="${p}"]`).forEach(b=>b.classList.remove('active'));
@@ -460,8 +501,7 @@ function openHuntPicker(p){
   });
   // Hunt picker btn
   $(`btn-pick-hunt-${p}`).addEventListener('click',()=>{
-    if(state.peerRole==='host' && p===2) return;
-    if(state.peerRole==='joiner' && p===1) return;
+    if(isPlayerLocked(p)) return;
     openHuntPicker(p);
   });
 });
@@ -476,6 +516,7 @@ function saveState(){
     steps:state.steps,
     shinys:state.shinys,
     huntPoke:state.huntPoke,
+    localRole:state.localRole,
   };
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));
 }
@@ -523,6 +564,13 @@ function restoreState(){
         }
       });
     }
+    // Roles restore
+    if(data.localRole) {
+      state.localRole = data.localRole;
+    } else {
+      state.localRole = 'both';
+    }
+    setLocalRole(state.localRole);
     // Update counter displays
     [1,2].forEach(p=>updateCounterUI(p));
   }catch(e){console.warn('Restore failed:',e);}
@@ -609,30 +657,39 @@ function updateUILocks() {
   const isHost = state.peerRole === 'host';
   const isJoiner = state.peerRole === 'joiner';
 
-  // Lock remote fields
-  $(`name-1`).disabled = isMulti && isJoiner;
-  $(`name-2`).disabled = isMulti && isHost;
-  
-  $(`camera-select-1`).disabled = isMulti && isJoiner;
-  $(`camera-select-2`).disabled = isMulti && isHost;
+  // Player 1 is locked if they are remote (multiplayer joiner, or local ss-only role)
+  const lock1 = (isMulti && isJoiner) || (!isMulti && state.localRole === 'ss');
+  // Player 2 is locked if they are remote (multiplayer host, or local hg-only role)
+  const lock2 = (isMulti && isHost) || (!isMulti && state.localRole === 'hg');
 
-  // Visual cues for disabled counters
-  if (isMulti) {
-    if (isHost) {
-      $(`counter-2`).classList.add('locked-ui');
-      $(`counter-1`).classList.remove('locked-ui');
-    } else {
-      $(`counter-1`).classList.add('locked-ui');
-      $(`counter-2`).classList.remove('locked-ui');
+  // Lock remote fields
+  $(`name-1`).disabled = lock1;
+  $(`name-2`).disabled = lock2;
+  
+  $(`camera-select-1`).disabled = lock1;
+  $(`camera-select-2`).disabled = lock2;
+
+  // Lock interactive inputs specifically
+  [1, 2].forEach(p => {
+    const locked = p === 1 ? lock1 : lock2;
+    
+    // Lock counter container
+    const counter = $(`counter-${p}`);
+    if (counter) {
+      counter.classList.toggle('locked-ui', locked);
     }
-  } else {
-    $(`counter-1`).classList.remove('locked-ui');
-    $(`counter-2`).classList.remove('locked-ui');
-    $(`name-1`).disabled = false;
-    $(`name-2`).disabled = false;
-    $(`camera-select-1`).disabled = false;
-    $(`camera-select-2`).disabled = false;
-  }
+
+    // Lock shiny slots
+    document.querySelectorAll(`.shiny-slot[data-player="${p}"]`).forEach(s => {
+      s.classList.toggle('locked-ui', locked);
+    });
+
+    // Lock camera buttons
+    const btnCam = $(`btn-cam-${p}`);
+    const btnMirror = $(`btn-mirror-${p}`);
+    if (btnCam) btnCam.classList.toggle('locked-ui', locked);
+    if (btnMirror) btnMirror.classList.toggle('locked-ui', locked);
+  });
 }
 
 // Handle all received data packages

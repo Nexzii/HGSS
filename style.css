@@ -817,4 +817,12 @@ body.mode-solo-ss .streams-container {
   }
 }
 
+/* Locked UI elements style */
+.locked-ui {
+  opacity: 0.45 !important;
+  pointer-events: none !important;
+  filter: grayscale(70%) !important;
+  transition: all 0.3s ease !important;
+}
+
 
