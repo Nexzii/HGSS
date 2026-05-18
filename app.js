@@ -23,7 +23,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.5';
+const CURRENT_VERSION = 'v1.6';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -37,11 +37,53 @@ async function checkUpdates() {
     const latestVersion = data.tag_name;
     
     if (latestVersion && latestVersion !== CURRENT_VERSION) {
-      container.innerHTML = `
-        <div class="update-banner available">
-          <span class="update-blink">✨</span> Mise à jour <strong>${latestVersion}</strong> dispo !
-          <a href="${data.html_url}" target="_blank" class="btn-update-download">Télécharger</a>
-        </div>`;
+      // Look for the compiled Windows Setup .exe in release assets
+      const exeAsset = data.assets && data.assets.find(asset => asset.name.endsWith('.exe'));
+      
+      if (exeAsset && window.electronAPI) {
+        // We are inside the desktop application and can auto-download and install!
+        container.innerHTML = `
+          <div class="update-banner loading" style="text-align: center;">
+            <span class="update-blink">⏳</span> Téléchargement de la mise à jour <strong>${latestVersion}</strong>...
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="update-progress-fill" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="update-progress-percent">0%</span>
+          </div>`;
+
+        // Register IPC update progress listeners
+        window.electronAPI.onDownloadProgress((percent) => {
+          const fill = $('update-progress-fill');
+          const text = $('update-progress-percent');
+          if (fill) fill.style.width = percent + '%';
+          if (text) text.textContent = percent + '%';
+        });
+
+        window.electronAPI.onDownloadComplete(() => {
+          container.innerHTML = `
+            <div class="update-banner success">
+              🎉 Téléchargement réussi ! Installation en cours...
+            </div>`;
+        });
+
+        window.electronAPI.onDownloadError((err) => {
+          container.innerHTML = `
+            <div class="update-banner error">
+              ⚠ Échec de l'auto-update : ${err}. 
+              <a href="${data.html_url}" target="_blank" class="btn-update-download">Téléchargement manuel</a>
+            </div>`;
+        });
+
+        // Trigger the safe Electron main process download
+        window.electronAPI.downloadUpdate(exeAsset.browser_download_url);
+      } else {
+        // Fallback for browser view or if no .exe asset is attached
+        container.innerHTML = `
+          <div class="update-banner available">
+            <span class="update-blink">✨</span> Mise à jour <strong>${latestVersion}</strong> dispo !
+            <a href="${data.html_url}" target="_blank" class="btn-update-download">Télécharger</a>
+          </div>`;
+      }
     } else {
       container.innerHTML = `
         <div class="update-banner up-to-date">

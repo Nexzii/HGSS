@@ -1,10 +1,14 @@
-## ◉ DS STREAM — HEARTGOLD & SOULSILVER (V1.5)
+## ◉ DS STREAM — HEARTGOLD & SOULSILVER (V1.6)
 
-Cette version corrige le **bug critique de clonage et de synchronisation des compteurs en mode Duo P2P** (Câble Link) ! 👾🐛⚡
+Cette version révolutionne la mise à jour de ton application grâce à un **Auto-Updater 100% Intégré et Automatique** ! 🚀⚡💻
 
-### 🌟 Correctifs et Améliorations de la version 1.5 :
-- **Routage P2P Parfait (Fin du bug de clonage) :** 
-  - Auparavant, le rôle de l'émetteur (`role`) n'était pas envoyé dans les messages de synchronisation P2P. Le récepteur interprétait donc tous les messages entrants comme appartenant à Player 2, clonant ainsi les Pokémon et écrasant les compteurs de SoulSilver à tort.
-  - **Résolution :** L'émetteur envoie désormais son rôle explicite (`host` pour P1 ou `joiner` pour P2). Le récepteur route les informations vers la bonne console (HeartGold ou SoulSilver) sans aucune collision !
-- **Indépendance des Compteurs :** Le compteur de l'hôte contrôle uniquement l'écran HeartGold, et celui de l'invité contrôle uniquement l'écran SoulSilver. Tu vois son compteur évoluer en temps réel sans jamais affecter le tien !
-- **Intégration d'Auto-Updater :** La version est officiellement taggée à `v1.5` pour signaler à tous tes amis qu'ils peuvent télécharger la mise à jour corrective en direct via le bouton du launcher !
+### 🌟 Nouveautés de la version 1.6 :
+- **Téléchargement & Installation 100% Automatiques :**
+  - Dès qu'une mise à jour plus récente est publiée sur GitHub, le launcher la repère immédiatement.
+  - Au lieu de t'envoyer vers une page web pour re-télécharger manuellement l'installateur, le launcher **lance le téléchargement en tâche de fond** directement depuis l'application !
+- **Indicateur de Progression Premium (Splash Screen) :**
+  - Pendant le téléchargement, une **barre de chargement lumineuse au dégradé or-rouge** (couleurs de Ho-Oh) s'affiche sur l'écran d'accueil avec le pourcentage exact (`%`) en temps réel !
+- **Mise à Jour Transparente :**
+  - Dès que le téléchargement atteint 100%, l'application lance automatiquement le nouvel installateur en tâche de fond et se ferme proprement pour éviter tout conflit de fichier verrouillé.
+  - L'installateur se charge de remplacer les fichiers, et comme configuré précédemment, relance automatiquement l'application mise à jour.
+  - **Zéro effort, zéro téléchargement manuel, mise à jour en 1 clic !**

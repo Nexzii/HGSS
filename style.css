@@ -825,4 +825,32 @@ body.mode-solo-ss .streams-container {
   transition: all 0.3s ease !important;
 }
 
+/* Auto-Updater Progress Bar Style */
+.progress-bar-container {
+  width: 80%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 12px auto 4px auto;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ffd700, #ff4500);
+  box-shadow: 0 0 12px #ffd700;
+  border-radius: 6px;
+  transition: width 0.1s linear;
+}
+.progress-percent {
+  font-size: 0.85em;
+  color: #ffd700;
+  margin-top: 4px;
+  display: block;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
 
