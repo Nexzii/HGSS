@@ -10,7 +10,7 @@
 }
 html,body{height:100%;overflow:hidden}
 body{
-  font-family:var(--font);background:var(--bg);color:var(--txt);
+  font-family:var(--font);background:var(--bg) url('assets/image.png') no-repeat center center / cover;color:var(--txt);
   display:flex;flex-direction:column;height:100vh;overflow:hidden;
   user-select:none;
 }
@@ -1251,7 +1251,7 @@ body.mode-solo-ss .streams-container {
   height: calc(100vh - 32px);
   z-index: -2; /* behind all dashboard UI panels */
   overflow: hidden;
-  background: #040409;
+  background: #040409 url('assets/image.png') no-repeat center center / cover;
 }
 
 .bg-video {
@@ -1278,4 +1278,53 @@ body.mode-solo-ss .streams-container {
   iframe.bg-video {
     width: 177.78vh;
   }
+}
+
+/* FNAF Secret Screamer Button (bottom left, slightly hidden) */
+.btn-secret-screamer {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  font-family: var(--font);
+  font-size: 0.65rem;
+  cursor: pointer;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-secret-screamer:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Screamer Overlay (full screen overlay, black background, covering everything) */
+.screamer-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999999; /* Cover custom title bar and everything! */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screamer-overlay.hidden {
+  display: none !important;
+}
+
+.screamer-overlay video {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
 }

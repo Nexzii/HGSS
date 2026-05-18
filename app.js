@@ -1420,4 +1420,40 @@ window.addEventListener('focus', () => {
   document.body.focus();
 });
 
+// ── FNAF SECRET SCREAMER JUMPSCARE ──
+(function initScreamer() {
+  const btn = $('btn-secret-screamer');
+  const overlay = $('screamer-overlay');
+  const video = $('screamer-video');
+  if (!btn || !overlay || !video) return;
+
+  btn.addEventListener('click', () => {
+    overlay.classList.remove('hidden');
+    video.currentTime = 0;
+    
+    // Unmute screamer audio
+    video.muted = false;
+    video.volume = 1.0;
+    
+    // Play jumpscare video
+    video.play().catch(e => {
+      console.warn('Screamer playback failed:', e);
+      overlay.classList.add('hidden');
+    });
+  });
+
+  video.addEventListener('ended', () => {
+    overlay.classList.add('hidden');
+    video.pause();
+    video.currentTime = 0;
+  });
+
+  // Clicking screen immediately closes the screamer
+  overlay.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    video.pause();
+    video.currentTime = 0;
+  });
+})();
+
 
