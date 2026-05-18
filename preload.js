@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.send('window-minimize'),
@@ -24,5 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const listener = (event, errorMsg) => callback(errorMsg);
     ipcRenderer.on('download-error', listener);
     return () => ipcRenderer.removeListener('download-error', listener);
-  }
+  },
+  setZoom: (factor) => webFrame.setZoomFactor(factor),
+  getZoom: () => webFrame.getZoomFactor()
 });

@@ -10,6 +10,10 @@ const state = {
   huntPoke:{1:null, 2:null},
   pickerMode:'shiny', // 'shiny' | 'hunt'
   localRole:'both', // 'hg' | 'ss' | 'both'
+  // Timers individuels
+  timers:{1:0, 2:0},
+  timerRunning:{1:false, 2:false},
+  timerIntervals:{1:null, 2:null},
   // Câble Link / PeerJS variables
   peer:null,
   conn:null,
@@ -23,7 +27,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.6';
+const CURRENT_VERSION = 'v1.7';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -506,11 +510,13 @@ function openHuntPicker(p){
   // + / -
   $(`btn-plus-${p}`).addEventListener('click',()=>{
     if(isPlayerLocked(p)) return;
+    startTimerIfNeeded(p);
     state.counts[p]=Math.max(0,state.counts[p]+state.steps[p]);
     updateCounterUI(p);saveState();broadcastState();
   });
   $(`btn-minus-${p}`).addEventListener('click',()=>{
     if(isPlayerLocked(p)) return;
+    startTimerIfNeeded(p);
     state.counts[p]=Math.max(0,state.counts[p]-state.steps[p]);
     updateCounterUI(p);saveState();broadcastState();
   });
@@ -559,6 +565,7 @@ function saveState(){
     shinys:state.shinys,
     huntPoke:state.huntPoke,
     localRole:state.localRole,
+    timers:state.timers, // Save timer seconds!
   };
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));
 }
@@ -613,6 +620,13 @@ function restoreState(){
       state.localRole = 'both';
     }
     setLocalRole(state.localRole);
+
+    // Timers restore
+    if (data.timers) {
+      state.timers = { 1: data.timers[1] || 0, 2: data.timers[2] || 0 };
+    }
+    [1, 2].forEach(p => updateTimerUI(p));
+
     // Update counter displays
     [1,2].forEach(p=>updateCounterUI(p));
   }catch(e){console.warn('Restore failed:',e);}
@@ -630,7 +644,9 @@ function broadcastState() {
     name: $(`name-${localPlayer}`).value,
     count: state.counts[localPlayer],
     huntPoke: state.huntPoke[localPlayer],
-    shinys: state.shinys[localPlayer]
+    shinys: state.shinys[localPlayer],
+    timer: state.timers[localPlayer], // Send timer seconds!
+    timerRunning: state.timerRunning[localPlayer] // Send active timer running state!
   });
 }
 
@@ -732,6 +748,14 @@ function updateUILocks() {
     const btnMirror = $(`btn-mirror-${p}`);
     if (btnCam) btnCam.classList.toggle('locked-ui', locked);
     if (btnMirror) btnMirror.classList.toggle('locked-ui', locked);
+
+    // Lock timer container and buttons
+    const timerBar = $(`timer-bar-${p}`);
+    const btnTimerToggle = $(`btn-timer-toggle-${p}`);
+    const btnTimerReset = $(`btn-timer-reset-${p}`);
+    if (timerBar) timerBar.classList.toggle('locked-ui', locked);
+    if (btnTimerToggle) btnTimerToggle.classList.toggle('locked-ui', locked);
+    if (btnTimerReset) btnTimerReset.classList.toggle('locked-ui', locked);
   });
 }
 
@@ -759,6 +783,31 @@ function handleDataMessage(data) {
         renderShinySlot(p, slot);
       });
     }
+
+    // Update remote timer
+    if (typeof data.timer === 'number') {
+      state.timers[p] = data.timer;
+      if (data.timerRunning) {
+        if (!state.timerRunning[p]) {
+          state.timerRunning[p] = true;
+          if (state.timerIntervals[p]) clearInterval(state.timerIntervals[p]);
+          state.timerIntervals[p] = setInterval(() => {
+            state.timers[p]++;
+            updateTimerUI(p);
+          }, 1000);
+        }
+      } else {
+        if (state.timerRunning[p]) {
+          state.timerRunning[p] = false;
+          if (state.timerIntervals[p]) {
+            clearInterval(state.timerIntervals[p]);
+            state.timerIntervals[p] = null;
+          }
+        }
+      }
+      updateTimerUI(p);
+    }
+
     saveState();
   } else if (data.type === 'camera-update') {
     // Peer requested us to call them or re-send stream
@@ -966,6 +1015,141 @@ function disconnectMultiplayer() {
       if (btnMax) {
         btnMax.textContent = '🗖'; // Maximize symbol
         btnMax.title = 'Agrandir';
+      }
+    }
+  });
+})();
+
+// ── INDIVIDUAL TIMERS ──
+
+function formatTime(totalSeconds) {
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  return [hrs, mins, secs].map(v => v.toString().padStart(2, '0')).join(':');
+}
+
+function updateTimerUI(p) {
+  const display = $(`timer-val-${p}`);
+  if (display) {
+    display.textContent = formatTime(state.timers[p]);
+  }
+  const btn = $(`btn-timer-toggle-${p}`);
+  if (btn) {
+    btn.innerHTML = state.timerRunning[p] ? '⏸' : '▶';
+    btn.classList.toggle('running', state.timerRunning[p]);
+  }
+}
+
+function startTimer(p) {
+  if (state.timerRunning[p]) return;
+  state.timerRunning[p] = true;
+  updateTimerUI(p);
+  
+  if (state.timerIntervals[p]) clearInterval(state.timerIntervals[p]);
+  state.timerIntervals[p] = setInterval(() => {
+    state.timers[p]++;
+    updateTimerUI(p);
+    // Periodically save state to prevent losing time on close
+    if (state.timers[p] % 5 === 0) {
+      saveState();
+    }
+  }, 1000);
+}
+
+function pauseTimer(p) {
+  if (!state.timerRunning[p]) return;
+  state.timerRunning[p] = false;
+  if (state.timerIntervals[p]) {
+    clearInterval(state.timerIntervals[p]);
+    state.timerIntervals[p] = null;
+  }
+  updateTimerUI(p);
+  saveState();
+}
+
+function toggleTimer(p) {
+  if (state.timerRunning[p]) {
+    pauseTimer(p);
+  } else {
+    startTimer(p);
+  }
+}
+
+function resetTimer(p) {
+  pauseTimer(p);
+  state.timers[p] = 0;
+  updateTimerUI(p);
+  saveState();
+}
+
+function startTimerIfNeeded(p) {
+  if (isPlayerLocked(p)) return;
+  if (!state.timerRunning[p]) {
+    startTimer(p);
+  }
+}
+
+// Bind timer controls
+[1, 2].forEach(p => {
+  const toggleBtn = $(`btn-timer-toggle-${p}`);
+  const resetBtn = $(`btn-timer-reset-${p}`);
+  
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      if (isPlayerLocked(p)) return;
+      toggleTimer(p);
+      broadcastState();
+    });
+  }
+  
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (isPlayerLocked(p)) return;
+      if (confirm(`Réinitialiser le chrono de ${$(`name-${p}`).value || 'Joueur ' + p} ?`)) {
+        resetTimer(p);
+        broadcastState();
+      }
+    });
+  }
+});
+
+
+// ── CTRL + WHEEL & KEYBOARD ZOOM CONTROLS ──
+(function initZoomControls() {
+  // Ctrl + Mousewheel zoom
+  window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      let zoom = (window.electronAPI && window.electronAPI.getZoom) ? window.electronAPI.getZoom() : 1.0;
+      if (e.deltaY < 0) {
+        zoom = Math.min(zoom + 0.05, 3.0); // max zoom 300%
+      } else {
+        zoom = Math.max(zoom - 0.05, 0.3); // min zoom 30%
+      }
+      if (window.electronAPI && window.electronAPI.setZoom) {
+        window.electronAPI.setZoom(zoom);
+      }
+    }
+  }, { passive: false });
+
+  // Ctrl + keyboard hotkeys zoom
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey) {
+      let zoom = (window.electronAPI && window.electronAPI.getZoom) ? window.electronAPI.getZoom() : 1.0;
+      if (e.key === '+' || e.key === '=' || e.keyCode === 107) { // ctrl + or ctrl numpad+
+        e.preventDefault();
+        zoom = Math.min(zoom + 0.05, 3.0);
+        if (window.electronAPI && window.electronAPI.setZoom) window.electronAPI.setZoom(zoom);
+      }
+      if (e.key === '-' || e.keyCode === 109) { // ctrl - or ctrl numpad-
+        e.preventDefault();
+        zoom = Math.max(zoom - 0.05, 0.3);
+        if (window.electronAPI && window.electronAPI.setZoom) window.electronAPI.setZoom(zoom);
+      }
+      if (e.key === '0' || e.keyCode === 96) { // ctrl 0
+        e.preventDefault();
+        if (window.electronAPI && window.electronAPI.setZoom) window.electronAPI.setZoom(1.0);
       }
     }
   });
