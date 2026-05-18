@@ -27,7 +27,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.0';
+const CURRENT_VERSION = 'v2.1';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
