@@ -722,3 +722,52 @@ function disconnectMultiplayer() {
   updateUILocks();
 }
 
+// ── CUSTOM WINDOW CONTROLS (ELECTRON IPC) ──
+(function initWindowControls() {
+  const isElectron = typeof window.electronAPI !== 'undefined';
+  
+  if (!isElectron) {
+    // Add fallback class to body when running in standard web browser (like chrome)
+    document.body.classList.add('is-browser');
+    return;
+  }
+
+  const btnMin = document.getElementById('tb-btn-minimize');
+  const btnMax = document.getElementById('tb-btn-maximize');
+  const btnClose = document.getElementById('tb-btn-close');
+
+  if (btnMin) {
+    btnMin.addEventListener('click', () => {
+      window.electronAPI.minimize();
+    });
+  }
+
+  if (btnMax) {
+    btnMax.addEventListener('click', () => {
+      window.electronAPI.maximize();
+    });
+  }
+
+  if (btnClose) {
+    btnClose.addEventListener('click', () => {
+      window.electronAPI.close();
+    });
+  }
+
+  // Update maximize/restore symbols and tooltips on window state changes
+  window.electronAPI.onWindowStateChange((state) => {
+    if (state === 'maximized') {
+      if (btnMax) {
+        btnMax.textContent = '🗗'; // Restore down symbol
+        btnMax.title = 'Restaurer';
+      }
+    } else {
+      if (btnMax) {
+        btnMax.textContent = '🗖'; // Maximize symbol
+        btnMax.title = 'Agrandir';
+      }
+    }
+  });
+})();
+
+

@@ -8,9 +8,90 @@
   --font-px:'Press Start 2P',monospace;
   --font:'Inter',sans-serif;
 }
-html,body{height:100%;overflow-x:hidden}
-body{font-family:var(--font);background:var(--bg);color:var(--txt);background-image:url('assets/bg_pattern.png');background-size:280px}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--txt);
+  background-image:url('assets/bg_pattern.png');background-size:280px;
+  display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  user-select:none;
+}
 .hidden{display:none!important}
+
+/* ── CUSTOM TITLE BAR ── */
+.custom-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  background: #06060c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  user-select: none;
+  -webkit-app-region: drag;
+  position: relative;
+  z-index: 1000;
+}
+.tb-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+}
+.tb-logo {
+  font-family: var(--font-px);
+  font-size: 0.8rem;
+  background: linear-gradient(135deg, var(--gold), var(--silver));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pulseLogo 2s ease-in-out infinite alternate;
+}
+@keyframes pulseLogo {
+  from { filter: drop-shadow(0 0 1px rgba(240, 208, 96, 0.5)); }
+  to { filter: drop-shadow(0 0 6px rgba(240, 208, 96, 0.8)); }
+}
+.tb-title {
+  font-family: var(--font-px);
+  font-size: 0.44rem;
+  color: var(--txt2);
+  letter-spacing: 1px;
+}
+.tb-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+.tb-btn {
+  background: transparent;
+  border: none;
+  color: var(--txt2);
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--txt);
+}
+.tb-close:hover {
+  background: #e81123 !important;
+  color: #fff !important;
+}
+.tb-btn:active {
+  opacity: 0.7;
+}
+
+/* Hide title bar when running outside Electron (in web browser) */
+body.is-browser .custom-title-bar {
+  display: none !important;
+}
+body.is-browser {
+  height: auto;
+  overflow: auto;
+}
 
 /* ── SPLASH ── */
 .splash{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a1a35,#0d0d1a);transition:opacity .6s,transform .6s}
@@ -39,7 +120,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);background-im
 .btn-icon.active{background:rgba(201,162,39,.18);color:var(--gold2);border-color:rgba(201,162,39,.4)}
 
 /* ── LAYOUT ── */
-.app{display:flex;flex-direction:column;min-height:100vh}
+.app{display:flex;flex-direction:column;flex:1;overflow:hidden}
 .content-area{display:flex;flex:1;overflow:hidden}
 .streams-container{display:flex;align-items:flex-start;justify-content:center;gap:16px;padding:20px;flex:1;overflow-y:auto;flex-wrap:wrap}
 
@@ -187,6 +268,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);background-im
 kbd{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-size:.65rem;border:1px solid var(--brd)}
 
 /* ── STREAM MODE ── */
+.stream-mode .custom-title-bar,
 .stream-mode .header,.stream-mode .footer,.stream-mode .panel-header,
 .stream-mode .ds-hinge,.stream-mode .ds-stats,.stream-mode .vs-divider,
 .stream-mode .shiny-sidebar,.stream-mode .link-cable-panel{display:none!important}
