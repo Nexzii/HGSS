@@ -27,7 +27,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.2';
+const CURRENT_VERSION = 'v2.3';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -1023,6 +1023,8 @@ function handleDataMessage(data) {
     updateMediaCall();
   } else if (data.type === 'camera-off') {
     stopRemoteCamera(data.player);
+  } else if (data.type === 'screamer-trigger') {
+    triggerLocalScreamer();
   }
 }
 
@@ -1421,6 +1423,25 @@ window.addEventListener('focus', () => {
 });
 
 // ── FNAF SECRET SCREAMER JUMPSCARE ──
+function triggerLocalScreamer() {
+  const overlay = $('screamer-overlay');
+  const video = $('screamer-video');
+  if (!overlay || !video) return;
+
+  overlay.classList.remove('hidden');
+  video.currentTime = 0;
+  
+  // Unmute screamer audio
+  video.muted = false;
+  video.volume = 1.0;
+  
+  // Play jumpscare video
+  video.play().catch(e => {
+    console.warn('Screamer playback failed:', e);
+    overlay.classList.add('hidden');
+  });
+}
+
 (function initScreamer() {
   const btn = $('btn-secret-screamer');
   const overlay = $('screamer-overlay');
@@ -1428,18 +1449,16 @@ window.addEventListener('focus', () => {
   if (!btn || !overlay || !video) return;
 
   btn.addEventListener('click', () => {
-    overlay.classList.remove('hidden');
-    video.currentTime = 0;
-    
-    // Unmute screamer audio
-    video.muted = false;
-    video.volume = 1.0;
-    
-    // Play jumpscare video
-    video.play().catch(e => {
-      console.warn('Screamer playback failed:', e);
-      overlay.classList.add('hidden');
-    });
+    triggerLocalScreamer();
+
+    // Trigger on connected peer's screen too!
+    if (state.conn) {
+      try {
+        state.conn.send({ type: 'screamer-trigger' });
+      } catch (e) {
+        console.warn('Failed to send jumpscare trigger to peer:', e);
+      }
+    }
   });
 
   video.addEventListener('ended', () => {
