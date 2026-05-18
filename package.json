@@ -18,7 +18,13 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "installerHeaderIcon": "assets/icon.png"
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "installerHeaderIcon": "assets/icon.png",
+      "installerSidebar": "assets/installerSidebar.png",
+      "installerHeader": "assets/installerHeader.png",
+      "shortcutName": "DS Stream HGSS",
+      "uninstallDisplayName": "DS Stream HGSS"
     },
     "files": [
       "**/*",
