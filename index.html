@@ -25,15 +25,51 @@
 
 <!-- Splash -->
 <div id="splash-screen" class="splash">
-    <div class="splash-content">
-        <div class="pokeball-loader">
-            <div class="pb-top"></div>
-            <div class="pb-mid"></div>
-            <div class="pb-bot"></div>
+    <div class="splash-content launcher-box">
+        <div class="launcher-header">
+            <div class="pokeball-loader">
+                <div class="pb-top"></div>
+                <div class="pb-mid"></div>
+                <div class="pb-bot"></div>
+            </div>
+            <h1 class="splash-title">DS STREAM</h1>
+            <p class="splash-sub">HeartGold &amp; SoulSilver Stream Overlay</p>
+            
+            <!-- Live Auto-Updater Status Banner -->
+            <div id="updater-status" class="updater-status">
+                <div class="update-banner loading">⏳ Connexion au serveur de mise à jour...</div>
+            </div>
         </div>
-        <h1 class="splash-title">DS STREAM</h1>
-        <p class="splash-sub">HeartGold &amp; SoulSilver</p>
-        <button id="btn-enter" class="btn-enter">▶ PRESS START</button>
+
+        <!-- Interactive Mode Selection Cards -->
+        <div class="mode-selection-area">
+            <h2 class="launcher-section-title">◀ CHOISIR LE MODE DE JEU ▶</h2>
+            <div class="mode-grid">
+                <button class="mode-card card-gold" id="btn-mode-hg" data-mode="solo-hg">
+                    <div class="card-glow"></div>
+                    <span class="card-badge gold-bg">HEARTGOLD</span>
+                    <div class="card-icon">✨</div>
+                    <span class="card-title">MODE SOLO GOLD</span>
+                    <span class="card-desc">Affiche uniquement l'écran doré de gauche, le compteur et la collection HeartGold. Idéal pour shasser seul.</span>
+                </button>
+                
+                <button class="mode-card card-silver" id="btn-mode-ss" data-mode="solo-ss">
+                    <div class="card-glow"></div>
+                    <span class="card-badge silver-bg">SOULSILVER</span>
+                    <div class="card-icon">⚡</div>
+                    <span class="card-title">MODE SOLO SILVER</span>
+                    <span class="card-desc">Affiche uniquement l'écran argenté de droite, le compteur et la collection SoulSilver. Idéal pour shasser seul.</span>
+                </button>
+                
+                <button class="mode-card card-duo active" id="btn-mode-duo" data-mode="duo-vs">
+                    <div class="card-glow"></div>
+                    <span class="card-badge duo-bg">CÂBLE LINK</span>
+                    <div class="card-icon">🔌</div>
+                    <span class="card-title">DUO VS SPLIT</span>
+                    <span class="card-desc">Affiche les deux consoles côte à côte. Permet de shasser avec 2 consoles ou de connecter un ami à distance.</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -246,6 +282,14 @@
                         <button class="btn-opt active" data-ratio="4/3">4:3 DS</button>
                         <button class="btn-opt" data-ratio="16/9">16:9</button>
                         <button class="btn-opt" data-ratio="1/1">1:1</button>
+                    </div>
+                </div>
+                 <div class="set-group">
+                    <label>Mode de jeu</label>
+                    <div class="set-row">
+                        <button class="btn-opt" id="btn-set-mode-hg" data-mode="solo-hg">HeartGold Solo</button>
+                        <button class="btn-opt" id="btn-set-mode-ss" data-mode="solo-ss">SoulSilver Solo</button>
+                        <button class="btn-opt active" id="btn-set-mode-duo" data-mode="duo-vs">Duo VS</button>
                     </div>
                 </div>
                 <div class="set-group">

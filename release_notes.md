@@ -1,12 +1,12 @@
-## ◉ DS STREAM — HEARTGOLD & SOULSILVER (V1.2)
+## ◉ DS STREAM — HEARTGOLD & SOULSILVER (V1.3)
 
-Cette version apporte une **personnalisation complète de l'installateur Windows (.exe)** ! 📦✨
+Cette version majeure introduit un **Launcher intelligent avant le lancement** et un **sélecteur de mode de jeu** (Solo HeartGold, Solo SoulSilver, Duo VS) ! 🚀✨
 
-### 🌟 Nouveautés de la version 1.2 :
-- **Design de l'Installateur Windows Custom :**
-  - **Bannière latérale (Welcome Banner) :** Un magnifique panneau vertical affichant Ho-Oh et Lugia avec des effets cosmiques or et argent sur l'écran d'accueil.
-  - **Icône d'en-tête (Header Icon) :** Une mini-icône de Pokéball dorée et argentée pixel-art en haut à droite des pages secondaires de l'assistant d'installation.
-- **Expérience Utilisateur optimisée :**
-  - **Lancement automatique après installation :** Une fois l'installation terminée, une case à cocher vous permet de lancer directement l'application en cliquant sur "Terminer".
-  - **Raccourcis propres :** Création automatique d'un raccourci dans le menu Démarrer et sur le Bureau Windows avec le nom propre "DS Stream HGSS".
-- **Et toutes les nouveautés de la v1.1 :** Le launcher borderless (frameless), le démarrage sans flash blanc (ready-to-show) et le déplacement par glisser-déposer !
+### 🌟 Nouveautés de la version 1.3 :
+- **Auto-Updater intégré :** L'application vérifie automatiquement au démarrage si une mise à jour est disponible sur ton GitHub et propose un bouton pour la télécharger en direct si une nouvelle version existe !
+- **Launcher avec Choix du Mode de Jeu :**
+  - **HeartGold Solo :** Affiche uniquement l'écran doré, ton compteur et les shassés HeartGold. L'écran s'agrandit pour prendre toute la place, parfaitement centré !
+  - **SoulSilver Solo :** Même chose, mais uniquement pour SoulSilver !
+  - **Duo VS (Câble Link) :** L'affichage double côte à côte classique pour shasser à deux ou à distance.
+- **Changement de layout à la volée :** Tu peux changer de mode instantanément depuis le menu **Paramètres** (icône engrenage) de l'overlay sans fermer le logiciel !
+- **Mémoire intelligente (Persistence) :** Le launcher se souvient du dernier mode choisi et le pré-sélectionne au démarrage suivant pour un confort maximal.

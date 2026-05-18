@@ -21,11 +21,112 @@ const state = {
 const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
-// ── SPLASH ──
-$('btn-enter').addEventListener('click',()=>{
+// ── LAUNCHER & AUTO-UPDATER ──
+const CURRENT_VERSION = 'v1.2';
+let activeGameMode = 'duo-vs';
+
+// Auto-Updater Check
+async function checkUpdates() {
+  const container = $('updater-status');
+  if (!container) return;
+  try {
+    const res = await fetch('https://api.github.com/repos/Nexzii/HGSS/releases/latest');
+    if (!res.ok) throw new Error('API Error');
+    const data = await res.json();
+    const latestVersion = data.tag_name;
+    
+    if (latestVersion && latestVersion !== CURRENT_VERSION) {
+      container.innerHTML = `
+        <div class="update-banner available">
+          <span class="update-blink">✨</span> Mise à jour <strong>${latestVersion}</strong> dispo !
+          <a href="${data.html_url}" target="_blank" class="btn-update-download">Télécharger</a>
+        </div>`;
+    } else {
+      container.innerHTML = `
+        <div class="update-banner up-to-date">
+          ✓ Version à jour (${CURRENT_VERSION})
+        </div>`;
+    }
+  } catch(e) {
+    container.innerHTML = `
+      <div class="update-banner error">
+        ⚠ Échec de vérification des maj
+      </div>`;
+  }
+}
+
+// Mode Selector Setter
+function setGameMode(mode) {
+  activeGameMode = mode;
+  localStorage.setItem('hgss-saved-gamemode', mode);
+
+  // Apply layout classes to body
+  document.body.classList.remove('mode-solo-hg', 'mode-solo-ss', 'mode-duo-vs');
+  if (mode === 'solo-hg') {
+    document.body.classList.add('mode-solo-hg');
+  } else if (mode === 'solo-ss') {
+    document.body.classList.add('mode-solo-ss');
+  } else {
+    document.body.classList.add('mode-duo-vs');
+  }
+
+  // Sync active states on launcher cards
+  ['hg', 'ss', 'duo'].forEach(m => {
+    const btn = $(`btn-mode-${m}`);
+    if (btn) {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    }
+  });
+
+  // Sync active states in Settings Modal
+  ['hg', 'ss', 'duo'].forEach(m => {
+    const btn = $(`btn-set-mode-${m}`);
+    if (btn) {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    }
+  });
+}
+
+function launchApp() {
   splash.classList.add('fade-out');
-  setTimeout(()=>{splash.classList.add('hidden');app.classList.remove('hidden');initCams();loadPokemon();restoreState();},600);
+  setTimeout(() => {
+    splash.classList.add('hidden');
+    app.classList.remove('hidden');
+    initCams();
+    loadPokemon();
+    restoreState();
+  }, 600);
+}
+
+// Bind Launcher mode card clicks
+['hg', 'ss', 'duo'].forEach(m => {
+  const btn = $(`btn-mode-${m}`);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      setGameMode(btn.dataset.mode);
+      launchApp();
+    });
+  }
 });
+
+// Bind Settings Modal mode switcher clicks
+['hg', 'ss', 'duo'].forEach(m => {
+  const btn = $(`btn-set-mode-${m}`);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      setGameMode(btn.dataset.mode);
+    });
+  }
+});
+
+// Initialize on page load
+(function initLauncher() {
+  checkUpdates();
+  
+  // Restore saved game mode
+  const savedMode = localStorage.getItem('hgss-saved-gamemode') || 'duo-vs';
+  setGameMode(savedMode);
+})();
 
 // ── CAMERAS ──
 async function initCams(){

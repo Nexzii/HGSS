@@ -557,3 +557,264 @@ kbd{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-size:
   transition: all 0.3s ease;
 }
 
+/* ── LAUNCHER / SPLASH EXPANSION ── */
+.launcher-box {
+  width: 95%;
+  max-width: 820px;
+  background: rgba(14, 14, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 36px 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  animation: launcherEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes launcherEntrance {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.launcher-header {
+  margin-bottom: 28px;
+}
+.launcher-section-title {
+  font-family: var(--font-px);
+  font-size: 0.65rem;
+  color: var(--txt2);
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Updater Status */
+.updater-status {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+.update-banner {
+  font-family: var(--font-px);
+  font-size: 0.44rem;
+  padding: 6px 16px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 1px;
+}
+.update-banner.loading {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--txt2);
+}
+.update-banner.up-to-date {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.1);
+}
+.update-banner.available {
+  background: rgba(240, 208, 96, 0.12);
+  border: 1px solid rgba(240, 208, 96, 0.4);
+  color: var(--gold2);
+  box-shadow: 0 0 15px rgba(240, 208, 96, 0.15);
+  animation: glowBanner 1.5s infinite alternate;
+}
+@keyframes glowBanner {
+  from { box-shadow: 0 0 10px rgba(240, 208, 96, 0.1); }
+  to { box-shadow: 0 0 20px rgba(240, 208, 96, 0.3); }
+}
+.update-blink {
+  animation: blinkSparkle 1s infinite alternate;
+}
+@keyframes blinkSparkle {
+  from { opacity: 0.3; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1.1); }
+}
+.btn-update-download {
+  font-family: var(--font-px);
+  font-size: 0.38rem;
+  padding: 3px 8px;
+  background: var(--gold);
+  color: #000;
+  border-radius: 4px;
+  text-decoration: none;
+  margin-left: 6px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+.btn-update-download:hover {
+  background: var(--gold2);
+  box-shadow: 0 0 8px var(--gold);
+  transform: translateY(-1px);
+}
+.update-banner.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* Mode Grid Selection Cards */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.mode-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 24px 16px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  color: var(--txt);
+  outline: none;
+}
+.mode-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.06);
+}
+.card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 30%, rgba(255, 255, 255, 0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.mode-card:hover .card-glow {
+  opacity: 1;
+}
+.card-badge {
+  font-family: var(--font-px);
+  font-size: 0.34rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+.gold-bg {
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--gold2);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+}
+.silver-bg {
+  background: rgba(168, 181, 200, 0.15);
+  color: var(--silver2);
+  border: 1px solid rgba(168, 181, 200, 0.3);
+}
+.duo-bg {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.15), rgba(168, 181, 200, 0.15));
+  color: var(--txt);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.card-icon {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+.mode-card:hover .card-icon {
+  transform: scale(1.15) rotate(4deg);
+}
+.card-title {
+  font-family: var(--font-px);
+  font-size: 0.52rem;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+.card-desc {
+  font-size: 0.65rem;
+  color: var(--txt2);
+  line-height: 1.4;
+}
+
+/* Card active glowing styling */
+.card-gold:hover, .card-gold.active {
+  border-color: var(--gold);
+  box-shadow: 0 8px 30px rgba(201, 162, 39, 0.22);
+  background: rgba(201, 162, 39, 0.05);
+}
+.card-gold.active .card-title {
+  color: var(--gold2);
+  text-shadow: 0 0 10px rgba(201, 162, 39, 0.4);
+}
+.card-silver:hover, .card-silver.active {
+  border-color: var(--silver);
+  box-shadow: 0 8px 30px rgba(168, 181, 200, 0.22);
+  background: rgba(168, 181, 200, 0.05);
+}
+.card-silver.active .card-title {
+  color: var(--silver2);
+  text-shadow: 0 0 10px rgba(168, 181, 200, 0.4);
+}
+.card-duo:hover, .card-duo.active {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+}
+.card-duo.active .card-title {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* ── SOLO MODE LAYOUT OVERRIDES ── */
+
+/* 1. HeartGold Solo Mode overrides */
+body.mode-solo-hg .soulsilver {
+  display: none !important;
+}
+body.mode-solo-hg .vs-divider {
+  display: none !important;
+}
+body.mode-solo-hg .shiny-sidebar .shiny-section:nth-of-type(2),
+body.mode-solo-hg .shiny-sidebar .sidebar-sep {
+  display: none !important;
+}
+body.mode-solo-hg .player-panel.heartgold {
+  max-width: 780px;
+  width: 100%;
+}
+body.mode-solo-hg .streams-container {
+  justify-content: center;
+  align-items: center;
+}
+
+/* 2. SoulSilver Solo Mode overrides */
+body.mode-solo-ss .heartgold {
+  display: none !important;
+}
+body.mode-solo-ss .vs-divider {
+  display: none !important;
+}
+body.mode-solo-ss .shiny-sidebar .shiny-section:first-of-type,
+body.mode-solo-ss .shiny-sidebar .sidebar-sep {
+  display: none !important;
+}
+body.mode-solo-ss .player-panel.soulsilver {
+  max-width: 780px;
+  width: 100%;
+}
+body.mode-solo-ss .streams-container {
+  justify-content: center;
+  align-items: center;
+}
+
+@media(max-width: 780px) {
+  .mode-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .launcher-box {
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+
