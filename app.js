@@ -27,7 +27,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.7';
+const CURRENT_VERSION = 'v1.8';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -264,7 +264,7 @@ async function startCam(p){
     $(`btn-cam-${p}`).classList.add('active');
     const s=$(`status-${p}`);s.textContent='ON';s.className='s-on';
     updateMediaCall();
-  }catch(e){alert(`Erreur caméra ${p}: ${e.message}`);}
+  }catch(e){showCustomAlert(`Erreur caméra ${p}: ${e.message}`);}
 }
 function stopCam(p){
   if(state.streams[p])state.streams[p].getTracks().forEach(t=>t.stop());
@@ -521,9 +521,10 @@ function openHuntPicker(p){
     updateCounterUI(p);saveState();broadcastState();
   });
   // Reset
-  $(`btn-reset-${p}`).addEventListener('click',()=>{
+  $(`btn-reset-${p}`).addEventListener('click',async()=>{
     if(isPlayerLocked(p)) return;
-    if(confirm(`Remettre le compteur de ${$(`name-${p}`).value||'Joueur '+p} à 0 ?`)){
+    const confirmed = await showCustomConfirm(`Remettre le compteur de ${$(`name-${p}`).value||'Joueur '+p} à 0 ?`);
+    if(confirmed){
       state.counts[p]=0;updateCounterUI(p);saveState();broadcastState();
     }
   });
@@ -1104,9 +1105,10 @@ function startTimerIfNeeded(p) {
   }
   
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener('click', async () => {
       if (isPlayerLocked(p)) return;
-      if (confirm(`Réinitialiser le chrono de ${$(`name-${p}`).value || 'Joueur ' + p} ?`)) {
+      const confirmed = await showCustomConfirm(`Réinitialiser le chrono de ${$(`name-${p}`).value || 'Joueur ' + p} ?`);
+      if (confirmed) {
         resetTimer(p);
         broadcastState();
       }
@@ -1154,5 +1156,60 @@ function startTimerIfNeeded(p) {
     }
   });
 })();
+
+// ── CUSTOM ASYNC DIALOG SYSTEM ──
+function showCustomConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = $('modal-dialog');
+    const msgEl = $('dialog-message');
+    const btnCancel = $('btn-dialog-cancel');
+    const btnConfirm = $('btn-dialog-confirm');
+    
+    msgEl.textContent = message;
+    modal.classList.remove('hidden');
+    btnCancel.style.display = 'inline-block'; // Show cancel button
+    
+    const cleanup = (value) => {
+      modal.classList.add('hidden');
+      btnConfirm.removeEventListener('click', onConfirm);
+      btnCancel.removeEventListener('click', onCancel);
+      resolve(value);
+    };
+    
+    function onConfirm() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    
+    btnConfirm.addEventListener('click', onConfirm);
+    btnCancel.addEventListener('click', onCancel);
+  });
+}
+
+function showCustomAlert(message) {
+  return new Promise((resolve) => {
+    const modal = $('modal-dialog');
+    const msgEl = $('dialog-message');
+    const btnCancel = $('btn-dialog-cancel');
+    const btnConfirm = $('btn-dialog-confirm');
+    
+    msgEl.textContent = message;
+    modal.classList.remove('hidden');
+    btnCancel.style.display = 'none'; // Hide cancel button for alert
+    
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      btnConfirm.removeEventListener('click', onConfirm);
+      resolve();
+    };
+    
+    function onConfirm() { cleanup(); }
+    
+    btnConfirm.addEventListener('click', onConfirm);
+  });
+}
+
+// Force window focus recovery to guarantee keyboard inputs never get frozen under Electron
+window.addEventListener('focus', () => {
+  document.body.focus();
+});
 
 

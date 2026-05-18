@@ -968,4 +968,13 @@ body.mode-solo-ss .streams-container {
   border-color: #e74c3c;
 }
 
+/* Custom Dialog Modal Box styling */
+.dialog-box {
+  max-width: 420px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #18181b, #09090b) !important;
+}
+
 
