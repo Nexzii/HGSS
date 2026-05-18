@@ -23,6 +23,20 @@
     </div>
 </div>
 
+<!-- High-fidelity Animated Video Background Container -->
+<div class="app-bg-video-container" id="bg-video-container">
+    <!-- Local HTML5 Video (Plays if local files are present) -->
+    <video autoplay loop muted playsinline id="bg-video-local" class="bg-video hidden">
+        <source id="bg-video-source" src="" type="video/mp4">
+    </video>
+    <!-- YouTube Embed Fallback (Renders if no local files) -->
+    <iframe id="bg-video-youtube" class="bg-video hidden" 
+            src="" 
+            frameborder="0" 
+            allow="autoplay; encrypted-media" 
+            allowfullscreen></iframe>
+</div>
+
 <!-- Splash -->
 <div id="splash-screen" class="splash">
     <div class="splash-content launcher-box">

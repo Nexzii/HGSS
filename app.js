@@ -171,6 +171,69 @@ function setGameMode(mode) {
       btn.classList.toggle('active', btn.dataset.mode === mode);
     }
   });
+
+  // Dynamic Video Background Update
+  updateVideoBackground(mode);
+}
+
+// ── HIGH-FIDELITY DYNAMIC VIDEO BACKGROUND CONTROLLER ──
+async function updateVideoBackground(mode) {
+  const localVideo = $('bg-video-local');
+  const localSource = $('bg-video-source');
+  const ytPlayer = $('bg-video-youtube');
+  if (!localVideo || !ytPlayer) return;
+
+  const localPaths = {
+    'solo-hg': 'assets/solo-hg.mp4',
+    'solo-ss': 'assets/solo-ss.mp4',
+    'duo-vs': 'assets/duo-vs.mp4'
+  };
+
+  const ytVideoIds = {
+    'solo-hg': '11d_gKmgOms', // HeartGold Ho-Oh fire opening cinematic
+    'solo-ss': 'Lq0A83O4Rko', // SoulSilver Lugia water opening cinematic
+    'duo-vs': '1Fh-k8-w90k'   // Combined title screens looping sequence
+  };
+
+  const targetLocalPath = localPaths[mode] || localPaths['duo-vs'];
+  const targetYtId = ytVideoIds[mode] || ytVideoIds['duo-vs'];
+
+  // Test local reachability asynchronously
+  let hasLocalFile = false;
+  try {
+    const check = await fetch(targetLocalPath, { method: 'HEAD' });
+    if (check.ok) {
+      hasLocalFile = true;
+    }
+  } catch(e) {
+    // Silent catch, fallback to online stream
+  }
+
+  if (hasLocalFile) {
+    // Disable and hide YouTube Player
+    ytPlayer.src = '';
+    ytPlayer.classList.add('hidden');
+
+    // Setup and trigger local video playback
+    if (!localSource.src.endsWith(targetLocalPath)) {
+      localSource.src = targetLocalPath;
+      localVideo.load();
+    }
+    localVideo.classList.remove('hidden');
+    localVideo.play().catch(e => console.warn('Local background autoplay rejected:', e));
+  } else {
+    // Pause and hide local video
+    localVideo.pause();
+    localVideo.classList.add('hidden');
+
+    // Build optimized, looping, silent YouTube embed URL
+    const ytUrl = `https://www.youtube.com/embed/${targetYtId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${targetYtId}&showinfo=0&rel=0&iv_load_policy=3&enablejsapi=1&modestbranding=1`;
+    
+    if (ytPlayer.src !== ytUrl) {
+      ytPlayer.src = ytUrl;
+    }
+    ytPlayer.classList.remove('hidden');
+  }
 }
 
 // ── WEB AUDIO SYNTHESIZERS FOR RETRO SOUND EFFECTS ──
