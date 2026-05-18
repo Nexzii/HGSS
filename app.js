@@ -27,7 +27,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v1.9';
+const CURRENT_VERSION = 'v2.0';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -173,15 +173,160 @@ function setGameMode(mode) {
   });
 }
 
+// ── WEB AUDIO SYNTHESIZERS FOR RETRO SOUND EFFECTS ──
+let audioCtx = null;
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+function playPokeballShakeSound() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    
+    const time = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.15);
+    
+    gain.gain.setValueAtTime(0.3, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.15);
+  } catch(e) { console.warn('Audio failed:', e); }
+}
+
+function playPokeballOpenSound() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
+    
+    const time = ctx.currentTime;
+    
+    // Sweep sound (Upward laser/explosion)
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, time);
+    osc.frequency.exponentialRampToValueAtTime(1800, time + 0.35);
+    
+    gain.gain.setValueAtTime(0.3, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.4);
+    
+    // Noise blast (energy explosion release)
+    const bufferSize = ctx.sampleRate * 0.3; // 0.3 seconds
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(800, time);
+    noiseFilter.frequency.exponentialRampToValueAtTime(300, time + 0.3);
+    
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.15, time);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+    
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    
+    noise.start(time);
+    noise.stop(time + 0.3);
+  } catch(e) { console.warn('Audio failed:', e); }
+}
+
 function launchApp() {
+  // Fade out splash launcher nicely
   splash.classList.add('fade-out');
-  setTimeout(() => {
+  
+  // Show the PokéBall transition overlay
+  const pbTransition = $('pokeball-transition');
+  const pbWrap = $('pb-wrap');
+  const pbFlash = $('pb-flash');
+  const pbLaser = $('pb-laser');
+  
+  if (pbTransition && pbWrap && pbFlash && pbLaser) {
+    pbTransition.classList.remove('hidden');
+    pbWrap.classList.add('pb-glowing');
+    
+    // T = 200ms: First Shake
+    setTimeout(() => {
+      pbWrap.classList.add('pb-shaking');
+      playPokeballShakeSound();
+    }, 200);
+    
+    // T = 800ms: Clear shake
+    setTimeout(() => {
+      pbWrap.classList.remove('pb-shaking');
+    }, 800);
+    
+    // T = 1000ms: Second Shake
+    setTimeout(() => {
+      pbWrap.classList.add('pb-shaking');
+      playPokeballShakeSound();
+    }, 1000);
+    
+    // T = 1600ms: Clear shake
+    setTimeout(() => {
+      pbWrap.classList.remove('pb-shaking');
+    }, 1600);
+    
+    // T = 1800ms: EXPLOSION / OPENING!
+    setTimeout(() => {
+      pbWrap.classList.add('pb-open');
+      pbFlash.classList.add('active');
+      pbLaser.classList.add('active');
+      playPokeballOpenSound();
+    }, 1800);
+    
+    // T = 2500ms: Fade out overlay, scale up main app
+    setTimeout(() => {
+      pbTransition.classList.add('fade-out');
+      splash.classList.add('hidden');
+      app.classList.remove('hidden');
+      
+      initCams();
+      loadPokemon();
+      restoreState();
+    }, 2500);
+    
+    // T = 3300ms: Clean up transition overlay completely
+    setTimeout(() => {
+      pbTransition.classList.add('hidden');
+      pbTransition.classList.remove('fade-out');
+      pbWrap.classList.remove('pb-open', 'pb-glowing', 'pb-shaking');
+      pbFlash.classList.remove('active');
+      pbLaser.classList.remove('active');
+    }, 3300);
+  } else {
+    // Fallback if elements aren't loaded
     splash.classList.add('hidden');
     app.classList.remove('hidden');
     initCams();
     loadPokemon();
     restoreState();
-  }, 600);
+  }
 }
 
 // Bind Launcher mode card clicks

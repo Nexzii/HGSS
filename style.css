@@ -1044,4 +1044,203 @@ body.mode-solo-ss .streams-container {
   transform: translateY(0);
 }
 
+/* ── CINEMATIC POKEBALL TRANSITION OVERLAY ── */
+.pb-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #1b1b36 0%, #070712 100%);
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.pb-transition.fade-out {
+  opacity: 0;
+  transform: scale(1.15);
+  pointer-events: none;
+}
+
+.pb-wrap {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.8));
+  transition: transform 0.1s ease;
+}
+
+.pb-half {
+  width: 200px;
+  height: 100px;
+  position: relative;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.pb-top-half {
+  background: linear-gradient(180deg, #ff3838 0%, #c01919 100%);
+  border: 10px solid #111116;
+  border-bottom: 5px solid #111116;
+  border-top-left-radius: 100px;
+  border-top-right-radius: 100px;
+  transform-origin: top center;
+  transition: transform 0.8s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.6s ease;
+}
+
+.pb-bottom-half {
+  background: linear-gradient(180deg, #ffffff 0%, #dcdde1 100%);
+  border: 10px solid #111116;
+  border-top: 5px solid #111116;
+  border-bottom-left-radius: 100px;
+  border-bottom-right-radius: 100px;
+  transform-origin: bottom center;
+  transition: transform 0.8s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.6s ease;
+}
+
+/* PokeBall Central Button Wrapper */
+.pb-button-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background: #111116;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.6s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.5s ease;
+}
+
+.pb-button-outer {
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.pb-button-inner {
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  border: 3px solid #111116;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Shake Animation */
+@keyframes pb-shake-anim {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  12% { transform: translate(-10px, 0) rotate(-16deg); }
+  24% { transform: translate(8px, 0) rotate(14deg); }
+  36% { transform: translate(-8px, 0) rotate(-12deg); }
+  48% { transform: translate(6px, 0) rotate(10deg); }
+  60% { transform: translate(-4px, 0) rotate(-6deg); }
+  72% { transform: translate(2px, 0) rotate(4deg); }
+  84% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.pb-shaking {
+  animation: pb-shake-anim 0.8s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Button Pulse/Glow */
+.pb-glowing .pb-button-inner {
+  background: #ff4757;
+  box-shadow: 0 0 15px #ff4757, 0 0 30px rgba(255, 71, 87, 0.6);
+  animation: pb-btn-pulse 0.4s infinite alternate;
+}
+
+@keyframes pb-btn-pulse {
+  from {
+    box-shadow: 0 0 10px #ff4757, 0 0 20px rgba(255, 71, 87, 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px #ff4757, 0 0 40px rgba(255, 71, 87, 0.8);
+  }
+}
+
+/* Splitting Open */
+.pb-open .pb-top-half {
+  transform: translateY(-220px) rotate(-15deg);
+  opacity: 0;
+}
+
+.pb-open .pb-bottom-half {
+  transform: translateY(220px) rotate(15deg);
+  opacity: 0;
+}
+
+.pb-open .pb-button-container {
+  transform: translate(-50%, -50%) scale(0) rotate(180deg);
+  opacity: 0;
+}
+
+/* Blinding Explosion Flash */
+.pb-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, #ffffff 0%, rgba(255, 255, 255, 0.9) 30%, transparent 70%);
+  opacity: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.pb-flash.active {
+  animation: pb-flash-explode-anim 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pb-flash-explode-anim {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+    background: radial-gradient(circle at center, #ffffff 0%, #ffd700 40%, transparent 70%);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(2);
+    background: radial-gradient(circle at center, #ffffff 0%, #ffd700 60%, transparent 80%);
+  }
+  50% {
+    opacity: 1;
+    background: radial-gradient(circle at center, #ffffff 0%, #ffffff 70%, transparent 100%);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(4);
+  }
+}
+
+/* Particle Explosion Laser Ring */
+.pb-laser {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  border-radius: 50%;
+  transform: scale(0.5);
+  box-shadow: 0 0 100px rgba(255, 215, 0, 0.6);
+}
+
+.pb-laser.active {
+  opacity: 1;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(201, 162, 39, 0.8) 15%, rgba(255, 69, 0, 0.4) 35%, transparent 70%);
+  transform: scale(3.5);
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 
