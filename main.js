@@ -174,6 +174,14 @@ function startLocalServer() {
     });
   });
 
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      console.warn(`PWA Local server port ${PORT} is already in use. Skipping server start.`);
+    } else {
+      console.error('PWA Local server error:', e);
+    }
+  });
+
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`PWA Local server running at http://0.0.0.0:${PORT}/`);
   });

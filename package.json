@@ -1,6 +1,6 @@
 {
   "name": "ds-stream-hgss",
-  "version": "2.8.2",
+  "version": "2.8.3",
   "description": "DS Stream Overlay — Pokémon HeartGold & SoulSilver",
   "main": "main.js",
   "scripts": {
