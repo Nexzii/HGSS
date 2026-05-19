@@ -16,10 +16,12 @@ const state = {
   timerIntervals:{1:null, 2:null, 3:null},
   // Câble Link / PeerJS variables
   peer:null,
-  conn:null,
+  conn:null, // for joiners
+  conn2:null, // for host (connection to Player 2)
+  conn3:null, // for host (connection to Player 3)
   activeCall:null,
   roomCode:null,
-  peerRole:null, // 'host' | 'joiner'
+  peerRole:null, // 'host' | 'joiner-2' | 'joiner-3'
   hasPlayer3:false, // dynamic 3rd player
 };
 
@@ -28,7 +30,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.4';
+const CURRENT_VERSION = 'v2.5';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -913,52 +915,79 @@ function restoreState(){
 
 // ── MULTIPLAYER LINK CABLE SYSTEM (PEERJS) ──
 
-// Broadcasts our local state to our connected peer
+// Broadcasts our local state to our connected peer(s)
 function broadcastState() {
-  if (!state.conn || !state.peerRole) return;
-  const localPlayer = state.peerRole === 'host' ? 1 : 2;
-  state.conn.send({
+  if (!state.peerRole) return;
+  const isHost = state.peerRole === 'host';
+  const localPlayer = isHost ? 1 : (state.peerRole === 'joiner-2' ? 2 : 3);
+  
+  const payload = {
     type: 'state-sync',
-    role: state.peerRole, // Send peer role so the remote side routes it to P1 or P2 correctly!
+    role: state.peerRole,
     name: $(`name-${localPlayer}`).value,
     count: state.counts[localPlayer],
     huntPoke: state.huntPoke[localPlayer],
     shinys: state.shinys[localPlayer],
-    timer: state.timers[localPlayer], // Send timer seconds!
-    timerRunning: state.timerRunning[localPlayer] // Send active timer running state!
-  });
+    timer: state.timers[localPlayer],
+    timerRunning: state.timerRunning[localPlayer]
+  };
+
+  if (isHost) {
+    if (state.conn2 && state.conn2.open) state.conn2.send(payload);
+    if (state.conn3 && state.conn3.open) state.conn3.send(payload);
+    
+    // Broadcast active status of Player 3
+    const p3Active = !$('player-panel-3').classList.contains('hidden');
+    const activePayload = { type: 'player3-active', active: p3Active };
+    if (state.conn2 && state.conn2.open) state.conn2.send(activePayload);
+    if (state.conn3 && state.conn3.open) state.conn3.send(activePayload);
+  } else {
+    if (state.conn && state.conn.open) {
+      state.conn.send(payload);
+    }
+  }
 }
 
 // Triggers or updates the WebRTC video exchange
 function updateMediaCall() {
-  if (!state.peer || !state.conn) return;
+  if (!state.peer) return;
 
-  if (state.peerRole === 'joiner') {
-    // Guest calls Host
+  if (state.peerRole === 'joiner-2' || state.peerRole === 'joiner-3') {
     if (state.activeCall) {
       state.activeCall.close();
       state.activeCall = null;
     }
-    const myStream = state.streams[2];
+    const localP = state.peerRole === 'joiner-2' ? 2 : 3;
+    const myStream = state.streams[localP];
     if (myStream) {
-      // Connect call passing our local stream
       const call = state.peer.call('hgss-' + state.roomCode, myStream);
       state.activeCall = call;
       setupCallListeners(call);
     } else {
-      // Let Host know we stopped camera
-      state.conn.send({ type: 'camera-off', player: 2 });
+      if (state.conn && state.conn.open) {
+        state.conn.send({ type: 'camera-off', player: localP });
+      }
     }
   } else if (state.peerRole === 'host') {
-    // Host asks Joiner to re-initiate call so Guest gets latest Host stream
-    state.conn.send({ type: 'camera-update' });
+    if (state.conn2 && state.conn2.open) state.conn2.send({ type: 'camera-update' });
+    if (state.conn3 && state.conn3.open) state.conn3.send({ type: 'camera-update' });
   }
 }
 
 // Setup common call stream receivers
 function setupCallListeners(call) {
   call.on('stream', remoteStream => {
-    const remotePlayer = state.peerRole === 'host' ? 2 : 1;
+    let remotePlayer = 2;
+    if (state.peerRole === 'host') {
+      if (state.conn2 && call.peer === state.conn2.peer) {
+        remotePlayer = 2;
+      } else if (state.conn3 && call.peer === state.conn3.peer) {
+        remotePlayer = 3;
+      }
+    } else {
+      remotePlayer = 1;
+    }
+
     const vid = $(`video-${remotePlayer}`);
     vid.srcObject = remoteStream;
     vid.onloadedmetadata = () => {
@@ -971,64 +1000,93 @@ function setupCallListeners(call) {
     s.textContent = 'ON';
     s.className = 's-on';
   });
+
   call.on('close', () => {
-    const remotePlayer = state.peerRole === 'host' ? 2 : 1;
+    let remotePlayer = 2;
+    if (state.peerRole === 'host') {
+      if (state.conn2 && call.peer === state.conn2.peer) remotePlayer = 2;
+      else if (state.conn3 && call.peer === state.conn3.peer) remotePlayer = 3;
+    } else {
+      remotePlayer = 1;
+    }
     stopRemoteCamera(remotePlayer);
   });
 }
 
 function stopRemoteCamera(p) {
   const vid = $(`video-${p}`);
-  vid.srcObject = null;
-  $(`no-signal-${p}`).classList.remove('hidden');
-  $(`btn-cam-${p}`).classList.remove('active');
+  if (vid) vid.srcObject = null;
+  const signal = $(`no-signal-${p}`);
+  if (signal) signal.classList.remove('hidden');
+  const btn = $(`btn-cam-${p}`);
+  if (btn) btn.classList.remove('active');
   const s = $(`status-${p}`);
-  s.textContent = 'OFF';
-  s.className = 's-off';
-  $(`res-${p}`).textContent = '—';
-  $(`fps-${p}`).textContent = '—';
+  if (s) {
+    s.textContent = 'OFF';
+    s.className = 's-off';
+  }
+  const res = $(`res-${p}`);
+  if (res) res.textContent = '—';
+  const fps = $(`fps-${p}`);
+  if (fps) fps.textContent = '—';
 }
 
 // Lock/unlock UI elements depending on role
 function updateUILocks() {
-  const isMulti = !!state.conn;
+  const isMulti = !!(state.conn || state.conn2 || state.conn3);
   const isHost = state.peerRole === 'host';
-  const isJoiner = state.peerRole === 'joiner';
+  const isJoiner2 = state.peerRole === 'joiner-2';
+  const isJoiner3 = state.peerRole === 'joiner-3';
 
-  // Player 1 is locked if they are remote (multiplayer joiner, or local ss-only role)
-  const lock1 = (isMulti && isJoiner) || (!isMulti && state.localRole === 'ss');
-  // Player 2 is locked if they are remote (multiplayer host, or local hg-only role)
-  const lock2 = (isMulti && isHost) || (!isMulti && state.localRole === 'hg');
+  let lock1 = false;
+  let lock2 = false;
+  let lock3 = false;
 
-  // Lock remote fields
+  if (isMulti) {
+    if (isHost) {
+      lock1 = false;
+      lock2 = true;
+      lock3 = true;
+    } else if (isJoiner2) {
+      lock1 = true;
+      lock2 = false;
+      lock3 = true;
+    } else if (isJoiner3) {
+      lock1 = true;
+      lock2 = true;
+      lock3 = false;
+    }
+  } else {
+    lock1 = state.localRole === 'ss';
+    lock2 = state.localRole === 'hg';
+    lock3 = false; // Always unlocked locally
+  }
+
   $(`name-1`).disabled = lock1;
   $(`name-2`).disabled = lock2;
+  $(`name-3`).disabled = lock3;
   
   $(`camera-select-1`).disabled = lock1;
   $(`camera-select-2`).disabled = lock2;
+  $(`camera-select-3`).disabled = lock3;
 
-  // Lock interactive inputs specifically
   [1, 2, 3].forEach(p => {
-    const locked = p === 3 ? false : (p === 1 ? lock1 : lock2);
+    const locked = p === 1 ? lock1 : (p === 2 ? lock2 : lock3);
     
-    // Lock counter container
     const counter = $(`counter-${p}`);
     if (counter) {
       counter.classList.toggle('locked-ui', locked);
     }
 
-    // Lock shiny slots
     document.querySelectorAll(`.shiny-slot[data-player="${p}"]`).forEach(s => {
       s.classList.toggle('locked-ui', locked);
     });
 
-    // Lock camera buttons
     const btnCam = $(`btn-cam-${p}`);
     const btnMirror = $(`btn-mirror-${p}`);
     if (btnCam) btnCam.classList.toggle('locked-ui', locked);
     if (btnMirror) btnMirror.classList.toggle('locked-ui', locked);
 
-    // Lock timer container and buttons
     const timerBar = $(`timer-bar-${p}`);
     const btnTimerToggle = $(`btn-timer-toggle-${p}`);
     const btnTimerReset = $(`btn-timer-reset-${p}`);
@@ -1041,21 +1099,22 @@ function updateUILocks() {
 // Handle all received data packages
 function handleDataMessage(data) {
   if (data.type === 'state-sync') {
-    const p = data.role === 'host' ? 1 : 2; // host represents Player 1, joiner represents Player 2
-    
-    // Update name
+    let p = 1;
+    if (data.role === 'host') p = 1;
+    else if (data.role === 'joiner-2') p = 2;
+    else if (data.role === 'joiner-3') p = 3;
+    else p = data.role === 'joiner' ? 2 : 1;
+
     $(`name-${p}`).value = data.name || '';
-    $(`shiny-label-${p}`).textContent = `${data.name || 'Joueur '+p} — ${p===1?'HeartGold':'SoulSilver'}`;
+    const consoleName = p === 1 ? 'HeartGold' : (p === 2 ? 'SoulSilver' : 'Crystal');
+    $(`shiny-label-${p}`).textContent = `${data.name || 'Joueur '+p} — ${consoleName}`;
     
-    // Update counter
     state.counts[p] = data.count || 0;
     updateCounterUI(p);
     
-    // Update hunt poke
     state.huntPoke[p] = data.huntPoke || null;
     renderHuntPoke(p);
     
-    // Update shiny slots
     if (data.shinys) {
       state.shinys[p] = data.shinys;
       state.shinys[p].forEach((poke, slot) => {
@@ -1063,7 +1122,6 @@ function handleDataMessage(data) {
       });
     }
 
-    // Update remote timer
     if (typeof data.timer === 'number') {
       state.timers[p] = data.timer;
       if (data.timerRunning) {
@@ -1087,9 +1145,21 @@ function handleDataMessage(data) {
       updateTimerUI(p);
     }
 
+    // Host relays guest state updates to the other guest!
+    if (state.peerRole === 'host') {
+      if (data.role === 'joiner-2' && state.conn3 && state.conn3.open) {
+        state.conn3.send(data);
+      } else if (data.role === 'joiner-3' && state.conn2 && state.conn2.open) {
+        state.conn2.send(data);
+      }
+    }
+
     saveState();
+  } else if (data.type === 'player3-active') {
+    if (state.peerRole !== 'host') {
+      setPlayer3Active(data.active);
+    }
   } else if (data.type === 'camera-update') {
-    // Peer requested us to call them or re-send stream
     updateMediaCall();
   } else if (data.type === 'camera-off') {
     stopRemoteCamera(data.player);
@@ -1098,29 +1168,17 @@ function handleDataMessage(data) {
   }
 }
 
-// ── CONNECTION CONTROLS ──
-
-const statusLight = $('lc-status-light');
-const statusText = $('lc-status-text');
-const groupOffline = $('lc-group-offline');
-const groupHosting = $('lc-group-hosting');
-const groupConnected = $('lc-group-connected');
-const myCodeDisplay = $('lc-my-code');
-const joinCodeInput = $('lc-join-code');
-
 $('btn-lc-host').addEventListener('click', () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   state.roomCode = code;
   state.peerRole = 'host';
   
-  // Set UI to Hosting
   statusLight.className = 'lc-status-dot hosting';
   statusText.textContent = 'En attente...';
   groupOffline.classList.add('hidden');
   groupHosting.classList.remove('hidden');
   myCodeDisplay.textContent = code;
 
-  // Initialize Host Peer
   state.peer = new Peer('hgss-' + code);
   
   state.peer.on('open', () => {
@@ -1128,13 +1186,33 @@ $('btn-lc-host').addEventListener('click', () => {
   });
 
   state.peer.on('connection', conn => {
-    state.conn = conn;
-    setupConnection(conn);
+    // Dynamically assign connections
+    if (!state.conn2 || !state.conn2.open) {
+      state.conn2 = conn;
+      conn.on('open', () => {
+        conn.send({ type: 'assign-role', role: 'joiner-2' });
+        setupConnection(conn, 2);
+      });
+    } else if (!state.conn3 || !state.conn3.open) {
+      state.conn3 = conn;
+      conn.on('open', () => {
+        conn.send({ type: 'assign-role', role: 'joiner-3' });
+        setPlayer3Active(true);
+        if (state.conn2 && state.conn2.open) {
+          state.conn2.send({ type: 'player3-active', active: true });
+        }
+        setupConnection(conn, 3);
+      });
+    } else {
+      conn.on('open', () => {
+        conn.send({ type: 'lobby-full' });
+        setTimeout(() => conn.close(), 1000);
+      });
+    }
   });
 
   state.peer.on('call', call => {
     state.activeCall = call;
-    // Answer call sending our local stream 1 (if active)
     call.answer(state.streams[1] || undefined);
     setupCallListeners(call);
   });
@@ -1156,26 +1234,54 @@ $('btn-lc-join').addEventListener('click', () => {
   }
 
   state.roomCode = code;
-  state.peerRole = 'joiner';
+  state.peerRole = 'joiner-2'; // initial default, will be overridden by host assignment
 
   statusLight.className = 'lc-status-dot hosting';
   statusText.textContent = 'Connexion...';
   groupOffline.classList.add('hidden');
   groupHosting.classList.add('hidden');
   
-  // Initialize Joiner Peer
   state.peer = new Peer();
   
   state.peer.on('open', () => {
     console.log('Joiner Peer opened');
     const conn = state.peer.connect('hgss-' + code);
     state.conn = conn;
-    setupConnection(conn);
+    
+    conn.on('data', data => {
+      if (data.type === 'assign-role') {
+        state.peerRole = data.role;
+        console.log('Assigned role by host:', state.peerRole);
+        updateUILocks();
+        broadcastState();
+      } else if (data.type === 'lobby-full') {
+        showCustomAlert('Le lobby est plein (maximum 3 joueurs) !');
+        disconnectMultiplayer();
+      } else {
+        handleDataMessage(data);
+      }
+    });
+
+    conn.on('open', () => {
+      statusLight.className = 'lc-status-dot connected';
+      statusText.textContent = 'Câble branché';
+      groupOffline.classList.add('hidden');
+      groupHosting.classList.add('hidden');
+      groupConnected.classList.remove('hidden');
+
+      updateUILocks();
+      updateMediaCall();
+    });
+
+    conn.on('close', () => {
+      disconnectMultiplayer();
+    });
   });
 
   state.peer.on('call', call => {
     state.activeCall = call;
-    call.answer(state.streams[2] || undefined);
+    const localP = state.peerRole === 'joiner-2' ? 2 : 3;
+    call.answer(state.streams[localP] || undefined);
     setupCallListeners(call);
   });
 
@@ -1185,7 +1291,7 @@ $('btn-lc-join').addEventListener('click', () => {
   });
 });
 
-function setupConnection(conn) {
+function setupConnection(conn, playerNum) {
   conn.on('open', () => {
     statusLight.className = 'lc-status-dot connected';
     statusText.textContent = 'Câble branché';
@@ -1194,11 +1300,7 @@ function setupConnection(conn) {
     groupConnected.classList.remove('hidden');
 
     updateUILocks();
-    
-    // Broadcast initial state
     broadcastState();
-    
-    // Trigger video stream transfer
     updateMediaCall();
   });
 
@@ -1207,7 +1309,23 @@ function setupConnection(conn) {
   });
 
   conn.on('close', () => {
-    disconnectMultiplayer();
+    console.log(`Connection closed for Player ${playerNum}`);
+    if (playerNum === 2) {
+      state.conn2 = null;
+      stopRemoteCamera(2);
+    } else if (playerNum === 3) {
+      state.conn3 = null;
+      stopRemoteCamera(3);
+      setPlayer3Active(false);
+      if (state.conn2 && state.conn2.open) {
+        state.conn2.send({ type: 'player3-active', active: false });
+      }
+    }
+
+    if ((!state.conn2 || !state.conn2.open) && (!state.conn3 || !state.conn3.open)) {
+      statusLight.className = 'lc-status-dot hosting';
+      statusText.textContent = 'En attente...';
+    }
   });
 }
 
@@ -1215,6 +1333,14 @@ function disconnectMultiplayer() {
   if (state.conn) {
     try { state.conn.close(); } catch(e){}
     state.conn = null;
+  }
+  if (state.conn2) {
+    try { state.conn2.close(); } catch(e){}
+    state.conn2 = null;
+  }
+  if (state.conn3) {
+    try { state.conn3.close(); } catch(e){}
+    state.conn3 = null;
   }
   if (state.activeCall) {
     try { state.activeCall.close(); } catch(e){}
@@ -1228,11 +1354,10 @@ function disconnectMultiplayer() {
   state.peerRole = null;
   state.roomCode = null;
 
-  // Stop remote stream views
   stopRemoteCamera(1);
   stopRemoteCamera(2);
+  stopRemoteCamera(3);
   
-  // Restore local stream if stopped
   if (state.streams[1]) {
     $('video-1').srcObject = state.streams[1];
     $('no-signal-1').classList.add('hidden');
@@ -1241,8 +1366,11 @@ function disconnectMultiplayer() {
     $('video-2').srcObject = state.streams[2];
     $('no-signal-2').classList.add('hidden');
   }
+  if (state.streams[3]) {
+    $('video-3').srcObject = state.streams[3];
+    $('no-signal-3').classList.add('hidden');
+  }
 
-  // Set UI back to Offline
   statusLight.className = 'lc-status-dot offline';
   statusText.textContent = 'Hors ligne';
   groupOffline.classList.remove('hidden');
