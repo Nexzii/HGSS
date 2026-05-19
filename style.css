@@ -657,7 +657,7 @@ kbd{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-size:
 /* Mode Grid Selection Cards */
 .mode-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 .mode-card {
@@ -713,6 +713,11 @@ kbd{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-size:
   color: var(--txt);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
+.crystal-bg {
+  background: rgba(75, 163, 227, 0.15);
+  color: var(--crystal2);
+  border: 1px solid rgba(75, 163, 227, 0.3);
+}
 
 .card-icon {
   font-size: 2.2rem;
@@ -752,6 +757,15 @@ kbd{background:rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-size:
 .card-silver.active .card-title {
   color: var(--silver2);
   text-shadow: 0 0 10px rgba(168, 181, 200, 0.4);
+}
+.card-crystal:hover, .card-crystal.active {
+  border-color: var(--crystal);
+  box-shadow: 0 8px 30px rgba(75, 163, 227, 0.22);
+  background: rgba(75, 163, 227, 0.05);
+}
+.card-crystal.active .card-title {
+  color: var(--crystal2);
+  text-shadow: 0 0 10px rgba(75, 163, 227, 0.4);
 }
 .card-duo:hover, .card-duo.active {
   border-color: rgba(255, 255, 255, 0.4);
@@ -801,6 +815,44 @@ body.mode-solo-ss .player-panel.soulsilver {
   width: 100%;
 }
 body.mode-solo-ss .streams-container {
+  justify-content: center;
+  align-items: center;
+}
+
+/* 3. Crystal Solo Mode overrides */
+body.mode-solo-crystal .heartgold {
+  display: none !important;
+}
+body.mode-solo-crystal .soulsilver {
+  display: none !important;
+}
+body.mode-solo-crystal .vs-divider {
+  display: none !important;
+}
+body.mode-solo-crystal .crystal-vs {
+  display: none !important;
+}
+body.mode-solo-crystal .add-player-card {
+  display: none !important;
+}
+body.mode-solo-crystal #btn-close-player-3 {
+  display: none !important;
+}
+body.mode-solo-crystal .shiny-sidebar .shiny-section:first-of-type,
+body.mode-solo-crystal .shiny-sidebar .shiny-section:nth-of-type(2),
+body.mode-solo-crystal .shiny-sidebar .sidebar-sep,
+body.mode-solo-crystal .shiny-sidebar #sidebar-sep-2-3 {
+  display: none !important;
+}
+body.mode-solo-crystal #shiny-section-3 {
+  display: flex !important;
+}
+body.mode-solo-crystal #player-panel-3 {
+  display: block !important;
+  max-width: 780px;
+  width: 100%;
+}
+body.mode-solo-crystal .streams-container {
   justify-content: center;
   align-items: center;
 }
@@ -1334,7 +1386,7 @@ body.mode-solo-ss .streams-container {
 
 .crystal {
   border-color: rgba(75, 163, 227, 0.25);
-  background: rgba(75, 163, 227, 0.05);
+  background: var(--bg3);
 }
 .crystal:hover {
   transform: translateY(-2px);

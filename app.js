@@ -20,6 +20,8 @@ const state = {
   conn2:null, // for host (connection to Player 2)
   conn3:null, // for host (connection to Player 3)
   activeCall:null,
+  activeCalls:{},
+  roomPeerIds:null,
   roomCode:null,
   peerRole:null, // 'host' | 'joiner-2' | 'joiner-3'
   hasPlayer3:false, // dynamic 3rd player
@@ -140,11 +142,14 @@ function setGameMode(mode) {
   localStorage.setItem('hgss-saved-gamemode', mode);
 
   // Apply layout classes to body
-  document.body.classList.remove('mode-solo-hg', 'mode-solo-ss', 'mode-duo-vs');
+  document.body.classList.remove('mode-solo-hg', 'mode-solo-ss', 'mode-solo-crystal', 'mode-duo-vs');
   if (mode === 'solo-hg') {
     document.body.classList.add('mode-solo-hg');
   } else if (mode === 'solo-ss') {
     document.body.classList.add('mode-solo-ss');
+  } else if (mode === 'solo-crystal') {
+    document.body.classList.add('mode-solo-crystal');
+    setPlayer3Active(true);
   } else {
     document.body.classList.add('mode-duo-vs');
   }
@@ -160,7 +165,7 @@ function setGameMode(mode) {
   }
 
   // Sync active states on launcher cards
-  ['hg', 'ss', 'duo'].forEach(m => {
+  ['hg', 'ss', 'crystal', 'duo'].forEach(m => {
     const btn = $(`btn-mode-${m}`);
     if (btn) {
       btn.classList.toggle('active', btn.dataset.mode === mode);
@@ -168,7 +173,7 @@ function setGameMode(mode) {
   });
 
   // Sync active states in Settings Modal
-  ['hg', 'ss', 'duo'].forEach(m => {
+  ['hg', 'ss', 'crystal', 'duo'].forEach(m => {
     const btn = $(`btn-set-mode-${m}`);
     if (btn) {
       btn.classList.toggle('active', btn.dataset.mode === mode);
@@ -189,12 +194,14 @@ async function updateVideoBackground(mode) {
   const localPaths = {
     'solo-hg': 'assets/solo-hg.mp4',
     'solo-ss': 'assets/solo-ss.mp4',
+    'solo-crystal': 'assets/solo-crystal.mp4',
     'duo-vs': 'assets/duo-vs.mp4'
   };
 
   const ytVideoIds = {
     'solo-hg': '11d_gKmgOms', // HeartGold Ho-Oh fire opening cinematic
     'solo-ss': 'Lq0A83O4Rko', // SoulSilver Lugia water opening cinematic
+    'solo-crystal': 'kU8Y3aK1F_M', // Pokemon Crystal intro cinematic
     'duo-vs': '1Fh-k8-w90k'   // Combined title screens looping sequence
   };
 
@@ -396,7 +403,7 @@ function launchApp() {
 }
 
 // Bind Launcher mode card clicks
-['hg', 'ss', 'duo'].forEach(m => {
+['hg', 'ss', 'crystal', 'duo'].forEach(m => {
   const btn = $(`btn-mode-${m}`);
   if (btn) {
     btn.addEventListener('click', () => {
@@ -407,7 +414,7 @@ function launchApp() {
 });
 
 // Bind Settings Modal mode switcher clicks
-['hg', 'ss', 'duo'].forEach(m => {
+['hg', 'ss', 'crystal', 'duo'].forEach(m => {
   const btn = $(`btn-set-mode-${m}`);
   if (btn) {
     btn.addEventListener('click', () => {
@@ -437,6 +444,9 @@ function launchApp() {
 
 // ── CRYSTAL 3RD PLAYER DYNAMIC CONTROLLER ──
 function setPlayer3Active(active) {
+  if (activeGameMode === 'solo-crystal') {
+    active = true;
+  }
   state.hasPlayer3 = active;
   const panel = $('player-panel-3');
   const divider = $('divider-2-3');
@@ -905,7 +915,7 @@ function restoreState(){
     });
 
     // Restore Player 3 active state
-    if (data.hasPlayer3) {
+    if (data.hasPlayer3 || activeGameMode === 'solo-crystal') {
       setPlayer3Active(true);
     } else {
       setPlayer3Active(false);
@@ -915,6 +925,7 @@ function restoreState(){
 
 // ── MULTIPLAYER LINK CABLE SYSTEM (PEERJS) ──
 
+// Broadcasts our local state to our connected peer(s)
 // Broadcasts our local state to our connected peer(s)
 function broadcastState() {
   if (!state.peerRole) return;
@@ -941,6 +952,16 @@ function broadcastState() {
     const activePayload = { type: 'player3-active', active: p3Active };
     if (state.conn2 && state.conn2.open) state.conn2.send(activePayload);
     if (state.conn3 && state.conn3.open) state.conn3.send(activePayload);
+
+    // Broadcast roomPeerIds to all guests
+    const peerIdsPayload = {
+      type: 'peer-ids',
+      1: 'hgss-' + state.roomCode,
+      2: (state.conn2 && state.conn2.open) ? state.conn2.peer : null,
+      3: (state.conn3 && state.conn3.open) ? state.conn3.peer : null
+    };
+    if (state.conn2 && state.conn2.open) state.conn2.send(peerIdsPayload);
+    if (state.conn3 && state.conn3.open) state.conn3.send(peerIdsPayload);
   } else {
     if (state.conn && state.conn.open) {
       state.conn.send(payload);
@@ -953,19 +974,48 @@ function updateMediaCall() {
   if (!state.peer) return;
 
   if (state.peerRole === 'joiner-2' || state.peerRole === 'joiner-3') {
-    if (state.activeCall) {
-      state.activeCall.close();
-      state.activeCall = null;
-    }
-    const localP = state.peerRole === 'joiner-2' ? 2 : 3;
-    const myStream = state.streams[localP];
+    const myPlayerNum = state.peerRole === 'joiner-2' ? 2 : 3;
+    const otherPlayerNum = state.peerRole === 'joiner-2' ? 3 : 2;
+    const otherPeerId = state.roomPeerIds ? state.roomPeerIds[otherPlayerNum] : null;
+    const myStream = state.streams[myPlayerNum];
+
     if (myStream) {
-      const call = state.peer.call('hgss-' + state.roomCode, myStream);
-      state.activeCall = call;
-      setupCallListeners(call);
+      // 1. Establish/Maintain call with the Host (Player 1)
+      if (!state.activeCalls[1] && state.roomPeerIds && state.roomPeerIds[1]) {
+        console.log('Calling host:', state.roomPeerIds[1]);
+        const call = state.peer.call(state.roomPeerIds[1], myStream);
+        state.activeCalls[1] = call;
+        setupCallListeners(call, 1);
+      }
+
+      // 2. Establish/Maintain call with the other guest if present
+      if (otherPeerId) {
+        if (!state.activeCalls[otherPlayerNum]) {
+          console.log(`Calling other guest (Player ${otherPlayerNum}):`, otherPeerId);
+          const call = state.peer.call(otherPeerId, myStream);
+          state.activeCalls[otherPlayerNum] = call;
+          setupCallListeners(call, otherPlayerNum);
+        }
+      } else {
+        // If the other guest disconnected, clean up their call
+        if (state.activeCalls[otherPlayerNum]) {
+          console.log(`Closing call to disconnected guest (Player ${otherPlayerNum})`);
+          try { state.activeCalls[otherPlayerNum].close(); } catch(e){}
+          delete state.activeCalls[otherPlayerNum];
+          stopRemoteCamera(otherPlayerNum);
+        }
+      }
     } else {
+      // Stop outgoing calls
+      [1, otherPlayerNum].forEach(p => {
+        if (state.activeCalls[p]) {
+          console.log(`Closing outgoing call to player ${p} because camera is off`);
+          try { state.activeCalls[p].close(); } catch(e){}
+          delete state.activeCalls[p];
+        }
+      });
       if (state.conn && state.conn.open) {
-        state.conn.send({ type: 'camera-off', player: localP });
+        state.conn.send({ type: 'camera-off', player: myPlayerNum });
       }
     }
   } else if (state.peerRole === 'host') {
@@ -975,41 +1025,59 @@ function updateMediaCall() {
 }
 
 // Setup common call stream receivers
-function setupCallListeners(call) {
+function setupCallListeners(call, playerNum) {
   call.on('stream', remoteStream => {
-    let remotePlayer = 2;
-    if (state.peerRole === 'host') {
-      if (state.conn2 && call.peer === state.conn2.peer) {
-        remotePlayer = 2;
-      } else if (state.conn3 && call.peer === state.conn3.peer) {
-        remotePlayer = 3;
+    let remotePlayer = playerNum;
+    if (!remotePlayer) {
+      if (state.peerRole === 'host') {
+        if (state.conn2 && call.peer === state.conn2.peer) remotePlayer = 2;
+        else if (state.conn3 && call.peer === state.conn3.peer) remotePlayer = 3;
+      } else {
+        if (state.roomPeerIds) {
+          if (call.peer === state.roomPeerIds[1]) remotePlayer = 1;
+          else if (call.peer === state.roomPeerIds[2]) remotePlayer = 2;
+          else if (call.peer === state.roomPeerIds[3]) remotePlayer = 3;
+        }
+        if (!remotePlayer) remotePlayer = 1;
       }
-    } else {
-      remotePlayer = 1;
     }
 
     const vid = $(`video-${remotePlayer}`);
-    vid.srcObject = remoteStream;
-    vid.onloadedmetadata = () => {
-      $(`res-${remotePlayer}`).textContent = `${vid.videoWidth}x${vid.videoHeight}`;
-      startFPS(remotePlayer, remoteStream);
-    };
+    if (vid) {
+      vid.srcObject = remoteStream;
+      vid.onloadedmetadata = () => {
+        $(`res-${remotePlayer}`).textContent = `${vid.videoWidth}x${vid.videoHeight}`;
+        startFPS(remotePlayer, remoteStream);
+      };
+    }
     $(`no-signal-${remotePlayer}`).classList.add('hidden');
     $(`btn-cam-${remotePlayer}`).classList.add('active');
     const s = $(`status-${remotePlayer}`);
-    s.textContent = 'ON';
-    s.className = 's-on';
+    if (s) {
+      s.textContent = 'ON';
+      s.className = 's-on';
+    }
   });
 
   call.on('close', () => {
-    let remotePlayer = 2;
-    if (state.peerRole === 'host') {
-      if (state.conn2 && call.peer === state.conn2.peer) remotePlayer = 2;
-      else if (state.conn3 && call.peer === state.conn3.peer) remotePlayer = 3;
-    } else {
-      remotePlayer = 1;
+    let remotePlayer = playerNum;
+    if (!remotePlayer) {
+      if (state.peerRole === 'host') {
+        if (state.conn2 && call.peer === state.conn2.peer) remotePlayer = 2;
+        else if (state.conn3 && call.peer === state.conn3.peer) remotePlayer = 3;
+      } else {
+        if (state.roomPeerIds) {
+          if (call.peer === state.roomPeerIds[1]) remotePlayer = 1;
+          else if (call.peer === state.roomPeerIds[2]) remotePlayer = 2;
+          else if (call.peer === state.roomPeerIds[3]) remotePlayer = 3;
+        }
+        if (!remotePlayer) remotePlayer = 1;
+      }
     }
     stopRemoteCamera(remotePlayer);
+    if (state.activeCalls && state.activeCalls[remotePlayer] === call) {
+      delete state.activeCalls[remotePlayer];
+    }
   });
 }
 
@@ -1159,6 +1227,14 @@ function handleDataMessage(data) {
     if (state.peerRole !== 'host') {
       setPlayer3Active(data.active);
     }
+  } else if (data.type === 'peer-ids') {
+    state.roomPeerIds = {
+      1: data[1],
+      2: data[2],
+      3: data[3]
+    };
+    console.log('Received updated peer list:', state.roomPeerIds);
+    updateMediaCall();
   } else if (data.type === 'camera-update') {
     updateMediaCall();
   } else if (data.type === 'camera-off') {
@@ -1223,9 +1299,18 @@ $('btn-lc-host').addEventListener('click', () => {
   });
 
   state.peer.on('call', call => {
-    state.activeCall = call;
-    call.answer(state.streams[1] || undefined);
-    setupCallListeners(call);
+    let remoteP = null;
+    if (state.conn2 && call.peer === state.conn2.peer) remoteP = 2;
+    else if (state.conn3 && call.peer === state.conn3.peer) remoteP = 3;
+    
+    if (remoteP) {
+      if (state.activeCalls[remoteP]) {
+        try { state.activeCalls[remoteP].close(); } catch(e){}
+      }
+      state.activeCalls[remoteP] = call;
+      call.answer(state.streams[1] || undefined);
+      setupCallListeners(call, remoteP);
+    }
   });
 
   state.peer.on('error', err => {
@@ -1326,10 +1411,19 @@ function joinLobbyByCode(code) {
   });
 
   state.peer.on('call', call => {
-    state.activeCall = call;
+    let remoteP = 1;
+    if (state.roomPeerIds) {
+      if (call.peer === state.roomPeerIds[1]) remoteP = 1;
+      else if (call.peer === state.roomPeerIds[2]) remoteP = 2;
+      else if (call.peer === state.roomPeerIds[3]) remoteP = 3;
+    }
+    if (state.activeCalls[remoteP]) {
+      try { state.activeCalls[remoteP].close(); } catch(e){}
+    }
+    state.activeCalls[remoteP] = call;
     const localP = state.peerRole === 'joiner-2' ? 2 : 3;
     call.answer(state.streams[localP] || undefined);
-    setupCallListeners(call);
+    setupCallListeners(call, remoteP);
   });
 
   state.peer.on('error', err => {
@@ -1398,6 +1492,12 @@ function disconnectMultiplayer() {
     try { state.conn3.close(); } catch(e){}
     state.conn3 = null;
   }
+  if (state.activeCalls) {
+    Object.keys(state.activeCalls).forEach(p => {
+      try { state.activeCalls[p].close(); } catch(e){}
+    });
+    state.activeCalls = {};
+  }
   if (state.activeCall) {
     try { state.activeCall.close(); } catch(e){}
     state.activeCall = null;
@@ -1406,6 +1506,7 @@ function disconnectMultiplayer() {
     try { state.peer.destroy(); } catch(e){}
     state.peer = null;
   }
+  state.roomPeerIds = null;
   
   state.peerRole = null;
   state.roomCode = null;
