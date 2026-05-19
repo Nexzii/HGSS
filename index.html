@@ -129,6 +129,7 @@
             <span class="hd-badge">HGSS</span>
         </div>
         <div class="hd-right">
+            <button id="btn-radio" class="btn-icon" title="Pokématos Radio">📻</button>
             <button id="btn-toggle-link" class="btn-icon active" title="Connexion Câble Link">🔌</button>
             <button id="btn-fullscreen" class="btn-icon" title="Plein écran">⛶</button>
             <button id="btn-settings" class="btn-icon" title="Paramètres">⚙</button>
@@ -507,6 +508,68 @@
             </div>
         </div>
     </div>
+
+    <!-- Pokématos Radio Modal -->
+    <div id="modal-radio" class="modal hidden" style="z-index: 600;">
+        <div class="modal-bg" style="backdrop-filter: blur(2px); background: rgba(0,0,0,0.5);"></div>
+        <div class="modal-box radio-box">
+            <div class="modal-head">
+                <h2>📻 Pokématos Radio</h2>
+                <button id="btn-close-radio" class="btn-close">✕</button>
+            </div>
+            <div class="radio-body">
+                <div class="radio-screen">
+                    <div class="radio-track-scroller">
+                        <span id="radio-track-name">Aucune musique en cours...</span>
+                    </div>
+                    <div class="radio-time">
+                        <span id="radio-time-current">0:00</span> / <span id="radio-time-total">0:00</span>
+                    </div>
+                </div>
+                
+                <div class="radio-controls">
+                    <button class="btn-radio-ctrl" id="btn-radio-prev" title="Précédent">⏮</button>
+                    <button class="btn-radio-ctrl play-btn" id="btn-radio-play" title="Lecture / Pause">▶</button>
+                    <button class="btn-radio-ctrl" id="btn-radio-next" title="Suivant">⏭</button>
+                    <button class="btn-radio-ctrl small" id="btn-radio-loop" title="Boucle">🔁</button>
+                </div>
+                
+                <div class="radio-volume">
+                    <span>🔈</span>
+                    <input type="range" id="radio-vol-slider" min="0" max="100" value="50">
+                    <span>🔊</span>
+                </div>
+
+                <div class="radio-playlist-section">
+                    <h3>Ma Playlist</h3>
+                    <div class="radio-playlist" id="radio-playlist">
+                        <div class="radio-empty">La playlist est vide.</div>
+                    </div>
+                </div>
+
+                <div class="radio-add-section">
+                    <div class="radio-add-tabs">
+                        <button class="radio-tab active" data-tab="yt">YouTube</button>
+                        <button class="radio-tab" data-tab="local">Local</button>
+                    </div>
+                    <div class="radio-add-content" id="radio-content-yt">
+                        <input type="text" id="radio-yt-input" class="radio-input" placeholder="Lien vidéo ou playlist YT...">
+                        <button class="btn-lc btn-lc-host" id="btn-add-yt">Ajouter</button>
+                    </div>
+                    <div class="radio-add-content hidden" id="radio-content-local">
+                        <label class="btn-lc btn-lc-host" style="display:block; text-align:center; cursor:pointer; width: 100%;">
+                            Choisir des fichiers audio (.mp3)
+                            <input type="file" id="radio-local-input" accept="audio/*" multiple style="display:none;">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden audio engines -->
+    <audio id="html5-audio-player" style="display:none;"></audio>
+    <div id="youtube-audio-player" style="display:none;"></div>
 
     <!-- Pokémon Picker Modal -->
     <div id="modal-picker" class="modal hidden">
