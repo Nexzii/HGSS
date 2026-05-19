@@ -9,7 +9,7 @@ const state = {
   steps:{1:1, 2:1, 3:1},
   huntPoke:{1:null, 2:null, 3:null},
   pickerMode:'shiny', // 'shiny' | 'hunt'
-  localRole:'both', // 'hg' | 'ss' | 'both'
+  localRole:'both', // 'hg' | 'ss' | 'crystal' | 'both'
   // Timers individuels
   timers:{1:0, 2:0, 3:0},
   timerRunning:{1:false, 2:false, 3:false},
@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.7';
+const CURRENT_VERSION = 'v2.7.1';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -109,13 +109,30 @@ async function checkUpdates() {
 
 // Helper to check if a player console panel is locked for the local user
 function isPlayerLocked(p) {
-  const isMulti = !!state.conn;
-  if (isMulti) {
-    if (state.peerRole === 'host' && p === 2) return true;
-    if (state.peerRole === 'joiner' && p === 1) return true;
+  if (state.peerRole) {
+    if (state.peerRole === 'host') {
+      return p !== 1;
+    }
+    if (state.peerRole === 'joiner-2') {
+      return p !== 2;
+    }
+    if (state.peerRole === 'joiner-3') {
+      return p !== 3;
+    }
   } else {
-    if (state.localRole === 'hg' && p === 2) return true;
-    if (state.localRole === 'ss' && p === 1) return true;
+    if (state.localRole === 'hg') {
+      return p !== 1;
+    }
+    if (state.localRole === 'ss') {
+      return p !== 2;
+    }
+    if (state.localRole === 'crystal') {
+      return p !== 3;
+    }
+    if (state.localRole === 'both') {
+      if (p === 3) return activeGameMode !== 'solo-crystal';
+      return false;
+    }
   }
   return false;
 }
@@ -125,7 +142,7 @@ function setLocalRole(role) {
   state.localRole = role;
 
   // Sync active states in Settings Modal
-  ['hg', 'ss', 'both'].forEach(r => {
+  ['hg', 'ss', 'crystal', 'both'].forEach(r => {
     const btn = $(`btn-set-role-${r}`);
     if (btn) {
       btn.classList.toggle('active', r === role);
@@ -424,7 +441,7 @@ function launchApp() {
 });
 
 // Bind Settings Modal local role selection clicks
-['hg', 'ss', 'both'].forEach(r => {
+['hg', 'ss', 'crystal', 'both'].forEach(r => {
   const btn = $(`btn-set-role-${r}`);
   if (btn) {
     btn.addEventListener('click', () => {
@@ -1125,9 +1142,9 @@ function updateUILocks() {
       lock3 = false;
     }
   } else {
-    lock1 = state.localRole === 'ss';
-    lock2 = state.localRole === 'hg';
-    lock3 = false; // Always unlocked locally
+    lock1 = state.localRole === 'ss' || state.localRole === 'crystal';
+    lock2 = state.localRole === 'hg' || state.localRole === 'crystal';
+    lock3 = state.localRole !== 'crystal' && activeGameMode !== 'solo-crystal';
   }
 
   $(`name-1`).disabled = lock1;
@@ -1433,7 +1450,7 @@ function joinLobbyByCode(code) {
 }
 
 function setupConnection(conn, playerNum) {
-  conn.on('open', () => {
+  const onOpen = () => {
     statusLight.className = 'lc-status-dot connected';
     statusText.textContent = 'Câble branché';
     groupOffline.classList.add('hidden');
@@ -1443,7 +1460,13 @@ function setupConnection(conn, playerNum) {
     updateUILocks();
     broadcastState();
     updateMediaCall();
-  });
+  };
+
+  if (conn.open) {
+    onOpen();
+  } else {
+    conn.on('open', onOpen);
+  }
 
   conn.on('data', data => {
     handleDataMessage(data);
