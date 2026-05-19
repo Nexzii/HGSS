@@ -130,12 +130,9 @@
         <div class="lc-controls">
             <!-- Offline Mode -->
             <div class="lc-sub-group" id="lc-group-offline">
-                <button class="btn-lc btn-lc-host" id="btn-lc-host">Héberger</button>
+                <button class="btn-lc btn-lc-host" id="btn-lc-host">Créer un Salon</button>
                 <span class="lc-sep">ou</span>
-                <div class="lc-input-wrapper">
-                    <input type="text" class="lc-input" id="lc-join-code" placeholder="Code..." maxlength="6">
-                    <button class="btn-lc btn-lc-join" id="btn-lc-join">Rejoindre</button>
-                </div>
+                <button class="btn-lc btn-lc-join" id="btn-lc-browse">Chercher un Salon</button>
             </div>
             <!-- Hosting Mode -->
             <div class="lc-sub-group hidden" id="lc-group-hosting">
@@ -408,6 +405,44 @@
                 </div>
             </div>
         </aside>
+    </div>
+
+    <!-- Lobby Browser Modal -->
+    <div id="modal-lobbies" class="modal hidden">
+        <div class="modal-bg"></div>
+        <div class="modal-box lobby-box">
+            <div class="modal-head">
+                <h2>🔌 Navigateur de Salons</h2>
+                <button id="btn-close-lobbies" class="btn-close">✕</button>
+            </div>
+            <div class="lobby-browser-body">
+                <div class="lobby-header-actions">
+                    <button class="btn-lc btn-lc-host" id="btn-refresh-lobbies" style="margin: 0;">↻ Rafraîchir</button>
+                    <div class="lobby-code-join-row">
+                        <input type="text" class="lc-input" id="lc-join-code-direct" placeholder="Rejoindre par code..." maxlength="6" style="width: 140px;">
+                        <button class="btn-lc btn-lc-join" id="btn-join-code-direct" style="margin: 0;">OK</button>
+                    </div>
+                </div>
+                
+                <div class="lobby-list-container">
+                    <div class="lobby-loading hidden" id="lobby-list-loading">
+                        <div class="pokeball-loader small-loader">
+                            <div class="pb-top"></div>
+                            <div class="pb-mid"></div>
+                            <div class="pb-bot"></div>
+                        </div>
+                        <p>Recherche de salons actifs...</p>
+                    </div>
+                    <div class="lobby-empty" id="lobby-list-empty">
+                        <p>Aucun salon actif pour le moment.</p>
+                        <span>Hébergez-en un pour lancer la partie !</span>
+                    </div>
+                    <div class="lobby-grid" id="lobby-grid">
+                        <!-- Dynamic Lobby Cards go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Settings Modal -->

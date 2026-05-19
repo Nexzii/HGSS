@@ -1480,3 +1480,135 @@ body.mode-solo-ss .streams-container {
   }
 }
 
+/* ── LOBBY BROWSER MODAL DESIGN ── */
+.lobby-box {
+  max-width: 600px !important;
+  width: 95% !important;
+}
+
+.lobby-browser-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lobby-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lobby-code-join-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lobby-list-container {
+  min-height: 200px;
+  max-height: 350px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 1px solid var(--brd);
+  padding: 12px;
+}
+
+.lobby-loading, .lobby-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  color: var(--txt3);
+}
+
+.lobby-loading p, .lobby-empty p {
+  margin: 12px 0 4px 0;
+  font-family: var(--font-px);
+  font-size: 0.75rem;
+  color: var(--txt1);
+}
+
+.lobby-loading span, .lobby-empty span {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.small-loader {
+  transform: scale(0.6);
+  margin-bottom: -10px;
+}
+
+.lobby-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lobby-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.lobby-card:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(3px);
+}
+
+.lobby-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.lobby-card-title {
+  font-family: var(--font-px);
+  font-size: 0.75rem;
+  color: var(--gold2);
+  text-shadow: 0 0 6px rgba(201, 162, 39, 0.3);
+}
+
+.lobby-card-meta {
+  font-size: 0.8rem;
+  color: var(--txt3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lobby-players-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  font-size: 0.7rem;
+  font-family: var(--font-px);
+}
+
+.lobby-players-badge.full {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.lobby-card-action button {
+  height: 32px !important;
+  font-size: 0.75rem !important;
+  padding: 0 16px !important;
+  border-radius: 6px !important;
+}
+

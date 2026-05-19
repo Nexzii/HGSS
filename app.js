@@ -30,7 +30,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.5';
+const CURRENT_VERSION = 'v2.6';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -1168,6 +1168,15 @@ function handleDataMessage(data) {
   }
 }
 
+// ── MULTIPLAYER DOM SELECTORS ──
+const statusLight = $('lc-status-light');
+const statusText = $('lc-status-text');
+const groupOffline = $('lc-group-offline');
+const groupHosting = $('lc-group-hosting');
+const groupConnected = $('lc-group-connected');
+const myCodeDisplay = $('lc-my-code');
+const joinCodeInput = $('lc-join-code-direct');
+
 $('btn-lc-host').addEventListener('click', () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   state.roomCode = code;
@@ -1183,15 +1192,16 @@ $('btn-lc-host').addEventListener('click', () => {
   
   state.peer.on('open', () => {
     console.log('Host Peer opened with ID: hgss-' + code);
+    startLobbyHeartbeat();
   });
 
   state.peer.on('connection', conn => {
-    // Dynamically assign connections
     if (!state.conn2 || !state.conn2.open) {
       state.conn2 = conn;
       conn.on('open', () => {
         conn.send({ type: 'assign-role', role: 'joiner-2' });
         setupConnection(conn, 2);
+        registerLobbyOnServer(); // Update player count immediately
       });
     } else if (!state.conn3 || !state.conn3.open) {
       state.conn3 = conn;
@@ -1202,6 +1212,7 @@ $('btn-lc-host').addEventListener('click', () => {
           state.conn2.send({ type: 'player3-active', active: true });
         }
         setupConnection(conn, 3);
+        registerLobbyOnServer(); // Update player count immediately
       });
     } else {
       conn.on('open', () => {
@@ -1226,15 +1237,51 @@ $('btn-lc-host').addEventListener('click', () => {
 $('btn-lc-cancel-host').addEventListener('click', disconnectMultiplayer);
 $('btn-lc-disconnect').addEventListener('click', disconnectMultiplayer);
 
-$('btn-lc-join').addEventListener('click', () => {
-  const code = joinCodeInput.value.trim();
+// Open Lobby Browser
+if ($('btn-lc-browse')) {
+  $('btn-lc-browse').addEventListener('click', () => {
+    $('modal-lobbies').classList.remove('hidden');
+    refreshLobbyGrid();
+  });
+}
+
+// Close Lobby Browser
+if ($('btn-close-lobbies')) {
+  $('btn-close-lobbies').addEventListener('click', () => {
+    $('modal-lobbies').classList.add('hidden');
+  });
+}
+
+// Direct join by code input
+if ($('btn-join-code-direct')) {
+  $('btn-join-code-direct').addEventListener('click', () => {
+    const code = $('lc-join-code-direct').value.trim();
+    joinLobbyByCode(code);
+  });
+}
+
+// Click on modal background closes it
+if ($('modal-lobbies')) {
+  $('modal-lobbies').querySelector('.modal-bg').addEventListener('click', () => {
+    $('modal-lobbies').classList.add('hidden');
+  });
+}
+
+// Refresh button
+if ($('btn-refresh-lobbies')) {
+  $('btn-refresh-lobbies').addEventListener('click', refreshLobbyGrid);
+}
+
+function joinLobbyByCode(code) {
   if (code.length !== 6 || isNaN(code)) {
     showCustomAlert('Le code doit comporter 6 chiffres !');
     return;
   }
 
+  $('modal-lobbies').classList.add('hidden');
+
   state.roomCode = code;
-  state.peerRole = 'joiner-2'; // initial default, will be overridden by host assignment
+  state.peerRole = 'joiner-2';
 
   statusLight.className = 'lc-status-dot hosting';
   statusText.textContent = 'Connexion...';
@@ -1289,7 +1336,7 @@ $('btn-lc-join').addEventListener('click', () => {
     showCustomAlert('Impossible de rejoindre cette partie. Vérifie le code !');
     disconnectMultiplayer();
   });
-});
+}
 
 function setupConnection(conn, playerNum) {
   conn.on('open', () => {
@@ -1326,10 +1373,19 @@ function setupConnection(conn, playerNum) {
       statusLight.className = 'lc-status-dot hosting';
       statusText.textContent = 'En attente...';
     }
+
+    if (state.peerRole === 'host') {
+      registerLobbyOnServer(); // Update player count dynamically on client leaves
+    }
   });
 }
 
 function disconnectMultiplayer() {
+  stopLobbyHeartbeat();
+  if (state.roomCode && state.peerRole === 'host') {
+    unregisterLobbyFromServer(state.roomCode);
+  }
+
   if (state.conn) {
     try { state.conn.close(); } catch(e){}
     state.conn = null;
@@ -1376,9 +1432,158 @@ function disconnectMultiplayer() {
   groupOffline.classList.remove('hidden');
   groupHosting.classList.add('hidden');
   groupConnected.classList.add('hidden');
-  joinCodeInput.value = '';
+  if (joinCodeInput) joinCodeInput.value = '';
 
   updateUILocks();
+}
+
+// ── MATCHMAKING LOBBY BROWSER ENGINE ──
+const LOBBY_DB_URL = 'https://keyvalue.immanual.co/api/key/hgss_multiplayer_lobbies_v5';
+
+async function registerLobbyOnServer() {
+  try {
+    const hostName = $(`name-1`).value || 'Hôte';
+    const lobbyName = `Salon de ${hostName}`;
+    const activeCount = 1 + (state.conn2 && state.conn2.open ? 1 : 0) + (state.conn3 && state.conn3.open ? 1 : 0);
+    
+    const res = await fetch(LOBBY_DB_URL);
+    let lobbies = [];
+    if (res.ok) {
+      const text = await res.text();
+      if (text) lobbies = JSON.parse(text);
+    }
+    if (!Array.isArray(lobbies)) lobbies = [];
+    
+    const now = Date.now();
+    // Filter out expired and our own old lobby
+    lobbies = lobbies.filter(l => now - l.lastSeen < 45000 && l.code !== state.roomCode);
+    
+    // Add current status
+    lobbies.push({
+      code: state.roomCode,
+      name: lobbyName,
+      host: hostName,
+      players: activeCount,
+      lastSeen: now
+    });
+    
+    await fetch(LOBBY_DB_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(lobbies)
+    });
+  } catch (e) {
+    console.warn('Failed to register lobby on server:', e);
+  }
+}
+
+async function unregisterLobbyFromServer(roomCode) {
+  if (!roomCode) return;
+  try {
+    const res = await fetch(LOBBY_DB_URL);
+    if (!res.ok) return;
+    const text = await res.text();
+    if (!text) return;
+    let lobbies = JSON.parse(text);
+    if (!Array.isArray(lobbies)) return;
+    
+    lobbies = lobbies.filter(l => l.code !== roomCode);
+    
+    await fetch(LOBBY_DB_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(lobbies)
+    });
+  } catch (e) {
+    console.warn('Failed to unregister lobby from server:', e);
+  }
+}
+
+function startLobbyHeartbeat() {
+  stopLobbyHeartbeat();
+  registerLobbyOnServer();
+  state.lobbyHeartbeatInterval = setInterval(registerLobbyOnServer, 15000);
+}
+
+function stopLobbyHeartbeat() {
+  if (state.lobbyHeartbeatInterval) {
+    clearInterval(state.lobbyHeartbeatInterval);
+    state.lobbyHeartbeatInterval = null;
+  }
+}
+
+async function getActiveLobbies() {
+  try {
+    const res = await fetch(LOBBY_DB_URL);
+    if (!res.ok) return [];
+    const text = await res.text();
+    if (!text) return [];
+    const lobbies = JSON.parse(text);
+    if (!Array.isArray(lobbies)) return [];
+    
+    const now = Date.now();
+    return lobbies.filter(l => now - l.lastSeen < 45000);
+  } catch (e) {
+    console.error('Failed to fetch lobbies:', e);
+    return [];
+  }
+}
+
+async function refreshLobbyGrid() {
+  const loading = $('lobby-list-loading');
+  const empty = $('lobby-list-empty');
+  const grid = $('lobby-grid');
+  
+  if (!loading || !empty || !grid) return;
+  
+  loading.classList.remove('hidden');
+  empty.classList.add('hidden');
+  grid.classList.add('hidden');
+  grid.innerHTML = '';
+  
+  const lobbies = await getActiveLobbies();
+  
+  loading.classList.add('hidden');
+  
+  if (lobbies.length === 0) {
+    empty.classList.remove('hidden');
+    return;
+  }
+  
+  lobbies.forEach(lobby => {
+    const card = document.createElement('div');
+    card.className = 'lobby-card';
+    card.innerHTML = `
+      <div class="lobby-card-info">
+        <div class="lobby-card-title">${escapeHTML(lobby.name)}</div>
+        <div class="lobby-card-meta">
+          <span>Code : <b>${escapeHTML(lobby.code)}</b></span>
+          <span class="lobby-players-badge ${lobby.players >= 3 ? 'full' : ''}">${lobby.players}/3 Joueurs</span>
+        </div>
+      </div>
+      <div class="lobby-card-action">
+        <button class="btn-lc btn-lc-join" data-code="${lobby.code}" ${lobby.players >= 3 ? 'disabled' : ''}>
+          ${lobby.players >= 3 ? 'Plein' : 'Rejoindre'}
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  
+  grid.classList.remove('hidden');
+  
+  grid.querySelectorAll('.btn-lc-join').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      joinLobbyByCode(code);
+    });
+  });
+}
+
+function escapeHTML(str) {
+  return String(str).replace(/[&<>'"]/g, 
+    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+  );
 }
 
 // ── CUSTOM WINDOW CONTROLS (ELECTRON IPC) ──
