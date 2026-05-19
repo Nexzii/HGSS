@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.8.0';
+const CURRENT_VERSION = 'v2.8.1';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -1258,6 +1258,15 @@ function handleDataMessage(data) {
     stopRemoteCamera(data.player);
   } else if (data.type === 'screamer-trigger') {
     triggerLocalScreamer();
+  } else if (data.type === 'radio-sync') {
+    window.dispatchEvent(new CustomEvent('radio-sync', { detail: data }));
+    // Host relays to other guests
+    if (state.peerRole === 'host') {
+      if (data.sender !== 'host') {
+        if (state.conn2 && state.conn2.open && data.sender !== 'joiner-2') state.conn2.send(data);
+        if (state.conn3 && state.conn3.open && data.sender !== 'joiner-3') state.conn3.send(data);
+      }
+    }
   }
 }
 
@@ -2081,10 +2090,20 @@ function triggerLocalScreamer() {
   // Load YouTube API
   window.onYouTubeIframeAPIReady = function() {
     ytApiReady = true;
+    
+    let safeOrigin = window.location.origin;
+    if (!safeOrigin || safeOrigin === 'null' || safeOrigin === 'file://') {
+      safeOrigin = 'http://localhost:8080';
+    }
+
     ytPlayer = new YT.Player('youtube-audio-player', {
       height: '0',
       width: '0',
-      playerVars: { 'autoplay': 0, 'controls': 0 },
+      playerVars: { 
+        'autoplay': 0, 
+        'controls': 0,
+        'origin': safeOrigin
+      },
       events: {
         'onReady': onYtReady,
         'onStateChange': onYtStateChange
@@ -2183,7 +2202,44 @@ function triggerLocalScreamer() {
     btnPlay.innerHTML = '▶';
   }
 
-  function playTrack(index) {
+  function broadcastRadioSync(action, payload = {}) {
+    if (!state.peerRole && !state.conn && !state.conn2 && !state.conn3) return;
+    const data = {
+      type: 'radio-sync',
+      sender: state.peerRole || 'host',
+      action: action,
+      ...payload
+    };
+    if (state.peerRole === 'host') {
+      if (state.conn2 && state.conn2.open) state.conn2.send(data);
+      if (state.conn3 && state.conn3.open) state.conn3.send(data);
+    } else {
+      if (state.conn && state.conn.open) state.conn.send(data);
+    }
+  }
+
+  window.addEventListener('radio-sync', (e) => {
+    const data = e.detail;
+    if (data.action === 'play-yt') {
+      let idx = playlist.findIndex(t => t.ytId === data.ytId);
+      if (idx === -1) {
+        playlist.push({ id: Date.now(), title: data.title, type: 'yt', ytId: data.ytId });
+        idx = playlist.length - 1;
+        renderPlaylist();
+      }
+      playTrack(idx, true);
+    } else if (data.action === 'play') {
+      if (!isPlaying) togglePlay(true);
+    } else if (data.action === 'pause') {
+      if (isPlaying) togglePlay(true);
+    } else if (data.action === 'volume') {
+      volSlider.value = data.volume;
+      html5Player.volume = data.volume / 100;
+      if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(data.volume);
+    }
+  });
+
+  function playTrack(index, fromSync = false) {
     if (index < 0 || index >= playlist.length) return;
     stopCurrentEngine();
     currentTrackIndex = index;
@@ -2201,7 +2257,7 @@ function triggerLocalScreamer() {
     } else if (track.type === 'yt') {
       currentEngine = 'yt';
       if (ytApiReady && ytPlayer && ytPlayer.loadVideoById) {
-        if (track.ytId.includes('playlist')) {
+        if (track.ytId.includes('list=')) {
            const listMatch = track.ytId.match(/list=([a-zA-Z0-9_-]+)/);
            if (listMatch) {
              ytPlayer.loadPlaylist({list: listMatch[1]});
@@ -2213,22 +2269,35 @@ function triggerLocalScreamer() {
         }
         ytPlayer.setVolume(volSlider.value);
       }
+      if (!fromSync) {
+        broadcastRadioSync('play-yt', { ytId: track.ytId, title: track.title });
+      }
     }
     startProgress();
     renderPlaylist();
   }
 
-  function togglePlay() {
+  function togglePlay(fromSync = false) {
     if (currentTrackIndex === -1 && playlist.length > 0) {
-      playTrack(0);
+      playTrack(0, fromSync);
       return;
     }
     if (currentEngine === 'html5') {
-      if (isPlaying) html5Player.pause();
-      else html5Player.play();
+      if (isPlaying) {
+        html5Player.pause();
+        if (!fromSync) broadcastRadioSync('pause');
+      } else {
+        html5Player.play();
+        if (!fromSync) broadcastRadioSync('play');
+      }
     } else if (currentEngine === 'yt' && ytPlayer) {
-      if (isPlaying) ytPlayer.pauseVideo();
-      else ytPlayer.playVideo();
+      if (isPlaying) {
+        ytPlayer.pauseVideo();
+        if (!fromSync) broadcastRadioSync('pause');
+      } else {
+        ytPlayer.playVideo();
+        if (!fromSync) broadcastRadioSync('play');
+      }
     }
   }
 
@@ -2258,6 +2327,9 @@ function triggerLocalScreamer() {
     const v = e.target.value;
     html5Player.volume = v / 100;
     if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(v);
+  });
+  volSlider.addEventListener('change', (e) => {
+    broadcastRadioSync('volume', { volume: e.target.value });
   });
 
   // Adding Local Files
