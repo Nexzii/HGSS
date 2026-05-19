@@ -26,5 +26,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('download-error', listener);
   },
   setZoom: (factor) => webFrame.setZoomFactor(factor),
-  getZoom: () => webFrame.getZoomFactor()
+  getZoom: () => webFrame.getZoomFactor(),
+  getLocalIp: () => ipcRenderer.invoke('get-local-ip')
 });

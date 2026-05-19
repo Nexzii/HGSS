@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.7.1';
+const CURRENT_VERSION = 'v2.7.2';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -1280,6 +1280,19 @@ $('btn-lc-host').addEventListener('click', () => {
   groupOffline.classList.add('hidden');
   groupHosting.classList.remove('hidden');
   myCodeDisplay.textContent = code;
+
+  const mobileInfo = $('lc-mobile-info');
+  if (mobileInfo) {
+    if (window.electronAPI && window.electronAPI.getLocalIp) {
+      window.electronAPI.getLocalIp().then(ip => {
+        mobileInfo.textContent = `📱 PWA Mobile: http://${ip}:8080`;
+      }).catch(() => {
+        mobileInfo.textContent = '';
+      });
+    } else {
+      mobileInfo.textContent = '';
+    }
+  }
 
   state.peer = new Peer('hgss-' + code);
   

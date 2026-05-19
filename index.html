@@ -7,6 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(() => {
+                console.log('PWA Service Worker registered successfully!');
+            }).catch(err => {
+                console.error('Service Worker registration failed:', err);
+            });
+        }
+    </script>
 </head>
 <body>
 
@@ -143,9 +153,12 @@
                 <button class="btn-lc btn-lc-join" id="btn-lc-browse">Chercher un Salon</button>
             </div>
             <!-- Hosting Mode -->
-            <div class="lc-sub-group hidden" id="lc-group-hosting">
-                <span class="lc-msg">Code à donner :</span>
-                <span class="lc-code-display" id="lc-my-code">------</span>
+            <div class="lc-sub-group hidden" id="lc-group-hosting" style="flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%; justify-content: center;">
+                    <span class="lc-msg">Code à donner :</span>
+                    <span class="lc-code-display" id="lc-my-code">------</span>
+                </div>
+                <div id="lc-mobile-info" class="lc-msg" style="width: 100%; text-align: center; font-size: 11px; opacity: 0.8; color: var(--accent3);"></div>
                 <button class="btn-lc btn-lc-cancel" id="btn-lc-cancel-host">Annuler</button>
             </div>
             <!-- Connected Mode -->
