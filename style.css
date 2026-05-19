@@ -2,6 +2,7 @@
 :root{
   --gold:#c9a227;--gold2:#f0d060;--gold3:#8b6914;
   --silver:#a8b5c8;--silver2:#d4dde8;--silver3:#5c6b7d;
+  --crystal:#4ba3e3;--crystal2:#a3d5ff;--crystal3:#2a6591;
   --bg:#0d0d1a;--bg2:#141428;--bg3:#1a1a35;
   --txt:#e8e8f0;--txt2:#7788aa;
   --brd:rgba(255,255,255,0.08);
@@ -1328,3 +1329,154 @@ body.mode-solo-ss .streams-container {
   height: 100vh;
   object-fit: cover;
 }
+
+/* ── CRYSTAL THEME & DYNAMIC ADD PLAYER CARD ── */
+
+.crystal {
+  border-color: rgba(75, 163, 227, 0.25);
+  background: rgba(75, 163, 227, 0.05);
+}
+.crystal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(75, 163, 227, 0.15);
+}
+.crystal-av {
+  background: linear-gradient(135deg, var(--crystal3), var(--crystal));
+  color: #fff;
+}
+.tag-crystal {
+  background: rgba(75, 163, 227, 0.18);
+  color: var(--crystal2);
+  border: 1px solid rgba(75, 163, 227, 0.3);
+}
+
+.crystal-screen::after {
+  box-shadow:
+    inset 0 0 0 3px var(--crystal2),
+    inset 0 0 0 7px var(--crystal),
+    inset 0 0 0 11px var(--crystal3),
+    inset 0 0 0 15px rgba(75, 163, 227, 0.35),
+    inset 0 0 30px rgba(75, 163, 227, 0.1),
+    0 0 0 2px var(--crystal),
+    0 0 20px rgba(75, 163, 227, 0.4);
+}
+.crystal-screen::before {
+  background:
+    radial-gradient(circle at 3% 3%, rgba(163, 213, 255, 0.5) 0, transparent 6%),
+    radial-gradient(circle at 97% 3%, rgba(163, 213, 255, 0.5) 0, transparent 6%),
+    radial-gradient(circle at 3% 97%, rgba(163, 213, 255, 0.5) 0, transparent 6%),
+    radial-gradient(circle at 97% 97%, rgba(163, 213, 255, 0.5) 0, transparent 6%);
+}
+.crystal-hinge {
+  background: linear-gradient(90deg, transparent, rgba(75, 163, 227, 0.2), transparent);
+  height: 10px;
+  border-radius: 5px;
+  margin: 2px 4px;
+  position: relative;
+}
+.crystal-dot {
+  background: var(--crystal);
+  box-shadow: 0 0 6px var(--crystal);
+}
+
+.crystal-label {
+  background: rgba(75, 163, 227, 0.12);
+  color: var(--crystal2);
+  border: 1px solid rgba(75, 163, 227, 0.25);
+}
+
+.crystal-vs {
+  display: flex;
+}
+
+.crystal-vs.hidden {
+  display: none !important;
+}
+
+.crystal .shiny-counter {
+  border-color: rgba(75, 163, 227, 0.25);
+  background: rgba(75, 163, 227, 0.05);
+}
+
+.crystal .timer-container {
+  border-left: 3px solid var(--crystal2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(75, 163, 227, 0.05);
+}
+
+.crystal .timer-time {
+  color: var(--crystal2);
+  text-shadow: 0 0 10px rgba(163, 213, 255, 0.6);
+}
+
+.add-player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 560px;
+  min-width: 320px;
+  align-self: stretch;
+  height: 590px;
+  background: rgba(14, 14, 28, 0.4);
+  border: 2px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+}
+.add-player-card:hover {
+  background: rgba(75, 163, 227, 0.03);
+  border-color: var(--crystal);
+  box-shadow: 0 8px 30px rgba(75, 163, 227, 0.15), inset 0 0 20px rgba(75, 163, 227, 0.02);
+  transform: translateY(-2px);
+}
+.add-player-card .add-icon {
+  font-size: 3rem;
+  color: var(--txt2);
+  opacity: 0.4;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.add-player-card:hover .add-icon {
+  color: var(--crystal2);
+  opacity: 0.9;
+  transform: scale(1.15) rotate(90deg);
+}
+.add-player-card .add-text {
+  font-family: var(--font-px);
+  font-size: 0.55rem;
+  color: var(--txt2);
+  letter-spacing: 1px;
+  transition: color 0.3s;
+}
+.add-player-card:hover .add-text {
+  color: var(--crystal2);
+}
+
+.btn-close-player {
+  opacity: 0.5;
+  transition: opacity 0.2s, color 0.2s, transform 0.2s;
+}
+.btn-close-player:hover {
+  opacity: 1;
+  color: #ef4444;
+  transform: scale(1.15);
+}
+
+/* Stream Mode overrides for Player 3 and divider */
+.stream-mode .crystal-vs,
+.stream-mode .add-player-card {
+  display: none !important;
+}
+
+@media(max-width: 900px) {
+  .add-player-card {
+    height: 320px;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+

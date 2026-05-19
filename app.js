@@ -1,25 +1,26 @@
 // ── STATE ──
 const state = {
-  streams:{1:null,2:null}, mirrored:{1:false,2:false}, fpsIv:{1:null,2:null},
+  streams:{1:null,2:null,3:null}, mirrored:{1:false,2:false,3:false}, fpsIv:{1:null,2:null,3:null},
   picker:{player:null,slot:null},
-  shinys:{1:[null,null,null,null,null,null],2:[null,null,null,null,null,null]},
+  shinys:{1:[null,null,null,null,null,null],2:[null,null,null,null,null,null],3:[null,null,null,null,null,null]},
   allPokemon:[], streamMode:false,
   // Compteur shiny
-  counts:{1:0, 2:0},
-  steps:{1:1, 2:1},
-  huntPoke:{1:null, 2:null},
+  counts:{1:0, 2:0, 3:0},
+  steps:{1:1, 2:1, 3:1},
+  huntPoke:{1:null, 2:null, 3:null},
   pickerMode:'shiny', // 'shiny' | 'hunt'
   localRole:'both', // 'hg' | 'ss' | 'both'
   // Timers individuels
-  timers:{1:0, 2:0},
-  timerRunning:{1:false, 2:false},
-  timerIntervals:{1:null, 2:null},
+  timers:{1:0, 2:0, 3:0},
+  timerRunning:{1:false, 2:false, 3:false},
+  timerIntervals:{1:null, 2:null, 3:null},
   // Câble Link / PeerJS variables
   peer:null,
   conn:null,
   activeCall:null,
   roomCode:null,
   peerRole:null, // 'host' | 'joiner'
+  hasPlayer3:false, // dynamic 3rd player
 };
 
 
@@ -432,6 +433,49 @@ function launchApp() {
   setGameMode(savedMode);
 })();
 
+// ── CRYSTAL 3RD PLAYER DYNAMIC CONTROLLER ──
+function setPlayer3Active(active) {
+  state.hasPlayer3 = active;
+  const panel = $('player-panel-3');
+  const divider = $('divider-2-3');
+  const addCard = $('add-player-card');
+  const shinySec = $('shiny-section-3');
+  const shinySep = $('sidebar-sep-2-3');
+  
+  if (active) {
+    if (panel) panel.classList.remove('hidden');
+    if (divider) divider.classList.remove('hidden');
+    if (addCard) addCard.classList.add('hidden');
+    if (shinySec) shinySec.classList.remove('hidden');
+    if (shinySep) shinySep.classList.remove('hidden');
+  } else {
+    if (state.streams[3]) {
+      stopCam(3);
+    }
+    if (panel) panel.classList.add('hidden');
+    if (divider) divider.classList.add('hidden');
+    if (addCard) addCard.classList.remove('hidden');
+    if (shinySec) shinySec.classList.add('hidden');
+    if (shinySep) shinySep.classList.add('hidden');
+  }
+  saveState();
+}
+
+if ($('add-player-card')) {
+  $('add-player-card').addEventListener('click', () => {
+    setPlayer3Active(true);
+  });
+}
+
+if ($('btn-close-player-3')) {
+  $('btn-close-player-3').addEventListener('click', async () => {
+    const confirmed = await showCustomConfirm("Retirer le joueur 3 du lobby ?");
+    if (confirmed) {
+      setPlayer3Active(false);
+    }
+  });
+}
+
 // ── CAMERAS ──
 async function initCams(){
   try{
@@ -441,8 +485,9 @@ async function initCams(){
   }catch(e){console.warn(e);}
 }
 function fillSelects(devs){
-  [1,2].forEach(p=>{
+  [1,2,3].forEach(p=>{
     const sel=$(`camera-select-${p}`);
+    if(!sel) return;
     sel.innerHTML='<option value="">Caméra...</option>';
     devs.forEach((d,i)=>{const o=document.createElement('option');o.value=d.deviceId;o.textContent=d.label||`Caméra ${i+1}`;sel.appendChild(o);});
     if(devs[p-1])sel.value=devs[p-1].deviceId;
@@ -451,10 +496,13 @@ function fillSelects(devs){
 navigator.mediaDevices.addEventListener('devicechange',async()=>{
   fillSelects((await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput'));
 });
-[1,2].forEach(p=>{
-  $(`btn-cam-${p}`).addEventListener('click',()=>toggleCam(p));
-  $(`btn-mirror-${p}`).addEventListener('click',()=>toggleMirror(p));
-  $(`camera-select-${p}`).addEventListener('change',()=>{if(state.streams[p])startCam(p);});
+[1,2,3].forEach(p=>{
+  const camBtn = $(`btn-cam-${p}`);
+  const mirBtn = $(`btn-mirror-${p}`);
+  const selEl = $(`camera-select-${p}`);
+  if(camBtn) camBtn.addEventListener('click',()=>toggleCam(p));
+  if(mirBtn) mirBtn.addEventListener('click',()=>toggleMirror(p));
+  if(selEl) selEl.addEventListener('change',()=>{if(state.streams[p])startCam(p);});
 });
 async function toggleCam(p){
   if(isPlayerLocked(p)) return;
@@ -498,12 +546,20 @@ function startFPS(p,stream){
 
 // ── PLAYER LABELS ──
 function syncLabels(){
-  [1,2].forEach(p=>{$(`shiny-label-${p}`).textContent=`${$(`name-${p}`).value||'Joueur '+p} — ${p===1?'HeartGold':'SoulSilver'}`;});
+  [1,2,3].forEach(p=>{
+    const nameEl = $(`name-${p}`);
+    const labelEl = $(`shiny-label-${p}`);
+    if (nameEl && labelEl) {
+      const suffix = p === 1 ? 'HeartGold' : p === 2 ? 'SoulSilver' : 'Crystal';
+      labelEl.textContent = `${nameEl.value || 'Joueur ' + p} — ${suffix}`;
+    }
+  });
   saveState();
   broadcastState();
 }
 $('name-1').addEventListener('input',syncLabels);
 $('name-2').addEventListener('input',syncLabels);
+if($('name-3')) $('name-3').addEventListener('input',syncLabels);
 
 // ── SETTINGS ──
 $('btn-settings').addEventListener('click',()=>$('modal-settings').classList.remove('hidden'));
@@ -534,7 +590,7 @@ $('btn-toggle-link').addEventListener('click',()=>{
 // ── KEYBOARD ──
 document.addEventListener('keydown',e=>{
   if(document.activeElement.tagName==='INPUT')return;
-  if(e.key==='1')toggleCam(1);if(e.key==='2')toggleCam(2);
+  if(e.key==='1')toggleCam(1);if(e.key==='2')toggleCam(2);if(e.key==='3')toggleCam(3);
   if(e.key==='s'||e.key==='S')$('modal-settings').classList.toggle('hidden');
   if(e.key==='m'||e.key==='M'){const t=$('tog-stream');t.checked=!t.checked;t.dispatchEvent(new Event('change'));}
   if(e.key==='Escape'){$('modal-settings').classList.add('hidden');$('modal-picker').classList.add('hidden');}
@@ -714,50 +770,52 @@ function openHuntPicker(p){
 
 
 // Init counter controls
-[1,2].forEach(p=>{
-  // + / -
-  $(`btn-plus-${p}`).addEventListener('click',()=>{
+[1,2,3].forEach(p=>{
+  const plusBtn = $(`btn-plus-${p}`);
+  const minusBtn = $(`btn-minus-${p}`);
+  const rstBtn = $(`btn-reset-${p}`);
+  const stepIn = $(`step-input-${p}`);
+  const huntBtn = $(`btn-pick-hunt-${p}`);
+
+  if (plusBtn) plusBtn.addEventListener('click',()=>{
     if(isPlayerLocked(p)) return;
     startTimerIfNeeded(p);
     state.counts[p]=Math.max(0,state.counts[p]+state.steps[p]);
     updateCounterUI(p);saveState();broadcastState();
   });
-  $(`btn-minus-${p}`).addEventListener('click',()=>{
+  if (minusBtn) minusBtn.addEventListener('click',()=>{
     if(isPlayerLocked(p)) return;
     startTimerIfNeeded(p);
     state.counts[p]=Math.max(0,state.counts[p]-state.steps[p]);
     updateCounterUI(p);saveState();broadcastState();
   });
-  // Reset
-  $(`btn-reset-${p}`).addEventListener('click',async()=>{
+  if (rstBtn) rstBtn.addEventListener('click',async()=>{
     if(isPlayerLocked(p)) return;
-    const confirmed = await showCustomConfirm(`Remettre le compteur de ${$(`name-${p}`).value||'Joueur '+p} à 0 ?`);
+    const nameVal = $(`name-${p}`) ? $(`name-${p}`).value : '';
+    const confirmed = await showCustomConfirm(`Remettre le compteur de ${nameVal||'Joueur '+p} à 0 ?`);
     if(confirmed){
       state.counts[p]=0;updateCounterUI(p);saveState();broadcastState();
     }
   });
-  // Step presets
   document.querySelectorAll(`.btn-step-preset[data-player="${p}"]`).forEach(btn=>{
     btn.addEventListener('click',()=>{
       if(isPlayerLocked(p)) return;
       const v=parseInt(btn.dataset.val)||1;
       state.steps[p]=v;
-      $(`step-input-${p}`).value=v;
+      if ($(`step-input-${p}`)) $(`step-input-${p}`).value=v;
       document.querySelectorAll(`.btn-step-preset[data-player="${p}"]`).forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       saveState();broadcastState();
     });
   });
-  // Custom step input
-  $(`step-input-${p}`).addEventListener('input',e=>{
+  if (stepIn) stepIn.addEventListener('input',e=>{
     if(isPlayerLocked(p)) return;
     const v=Math.max(1,parseInt(e.target.value)||1);
     state.steps[p]=v;
     document.querySelectorAll(`.btn-step-preset[data-player="${p}"]`).forEach(b=>b.classList.remove('active'));
     saveState();broadcastState();
   });
-  // Hunt picker btn
-  $(`btn-pick-hunt-${p}`).addEventListener('click',()=>{
+  if (huntBtn) huntBtn.addEventListener('click',()=>{
     if(isPlayerLocked(p)) return;
     openHuntPicker(p);
   });
@@ -768,13 +826,14 @@ const SAVE_KEY='hgss-stream-save-v1';
 
 function saveState(){
   const data={
-    names:{1:$('name-1').value,2:$('name-2').value},
+    names:{1:$('name-1').value,2:$('name-2').value,3:$('name-3') ? $('name-3').value : ''},
     counts:state.counts,
     steps:state.steps,
     shinys:state.shinys,
     huntPoke:state.huntPoke,
     localRole:state.localRole,
-    timers:state.timers, // Save timer seconds!
+    timers:state.timers,
+    hasPlayer3:state.hasPlayer3
   };
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));
 }
@@ -786,25 +845,25 @@ function restoreState(){
     const data=JSON.parse(raw);
     // Noms joueurs
     if(data.names){
-      [1,2].forEach(p=>{
-        if(data.names[p]){
+      [1,2,3].forEach(p=>{
+        if(data.names[p] && $(`name-${p}`)){
           $(`name-${p}`).value=data.names[p];
         }
       });
       syncLabels();
     }
     // Compteurs
-    if(data.counts) state.counts={1:data.counts[1]||0,2:data.counts[2]||0};
+    if(data.counts) state.counts={1:data.counts[1]||0,2:data.counts[2]||0,3:data.counts[3]||0};
     // Steps
     if(data.steps){
-      state.steps={1:data.steps[1]||1,2:data.steps[2]||1};
-      [1,2].forEach(p=>{
-        $(`step-input-${p}`).value=state.steps[p];
+      state.steps={1:data.steps[1]||1,2:data.steps[2]||1,3:data.steps[3]||1};
+      [1,2,3].forEach(p=>{
+        if ($(`step-input-${p}`)) $(`step-input-${p}`).value=state.steps[p];
       });
     }
     // Shinys collection
     if(data.shinys){
-      [1,2].forEach(p=>{
+      [1,2,3].forEach(p=>{
         if(data.shinys[p]){
           state.shinys[p]=data.shinys[p];
           state.shinys[p].forEach((poke,slot)=>{
@@ -815,7 +874,7 @@ function restoreState(){
     }
     // Hunt Pokémon
     if(data.huntPoke){
-      [1,2].forEach(p=>{
+      [1,2,3].forEach(p=>{
         if(data.huntPoke[p]){
           state.huntPoke[p]=data.huntPoke[p];
           renderHuntPoke(p);
@@ -832,12 +891,23 @@ function restoreState(){
 
     // Timers restore
     if (data.timers) {
-      state.timers = { 1: data.timers[1] || 0, 2: data.timers[2] || 0 };
+      state.timers = { 1: data.timers[1] || 0, 2: data.timers[2] || 0, 3: data.timers[3] || 0 };
     }
-    [1, 2].forEach(p => updateTimerUI(p));
+    [1, 2, 3].forEach(p => {
+      if ($(`timer-val-${p}`)) updateTimerUI(p);
+    });
 
     // Update counter displays
-    [1,2].forEach(p=>updateCounterUI(p));
+    [1,2,3].forEach(p=>{
+      if ($(`count-val-${p}`)) updateCounterUI(p);
+    });
+
+    // Restore Player 3 active state
+    if (data.hasPlayer3) {
+      setPlayer3Active(true);
+    } else {
+      setPlayer3Active(false);
+    }
   }catch(e){console.warn('Restore failed:',e);}
 }
 
@@ -938,8 +1008,8 @@ function updateUILocks() {
   $(`camera-select-2`).disabled = lock2;
 
   // Lock interactive inputs specifically
-  [1, 2].forEach(p => {
-    const locked = p === 1 ? lock1 : lock2;
+  [1, 2, 3].forEach(p => {
+    const locked = p === 3 ? false : (p === 1 ? lock1 : lock2);
     
     // Lock counter container
     const counter = $(`counter-${p}`);
@@ -1302,7 +1372,7 @@ function startTimerIfNeeded(p) {
 }
 
 // Bind timer controls
-[1, 2].forEach(p => {
+[1, 2, 3].forEach(p => {
   const toggleBtn = $(`btn-timer-toggle-${p}`);
   const resetBtn = $(`btn-timer-reset-${p}`);
   
@@ -1317,7 +1387,8 @@ function startTimerIfNeeded(p) {
   if (resetBtn) {
     resetBtn.addEventListener('click', async () => {
       if (isPlayerLocked(p)) return;
-      const confirmed = await showCustomConfirm(`Réinitialiser le chrono de ${$(`name-${p}`).value || 'Joueur ' + p} ?`);
+      const nameVal = $(`name-${p}`) ? $(`name-${p}`).value : '';
+      const confirmed = await showCustomConfirm(`Réinitialiser le chrono de ${nameVal || 'Joueur ' + p} ?`);
       if (confirmed) {
         resetTimer(p);
         broadcastState();

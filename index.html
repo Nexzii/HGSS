@@ -285,6 +285,80 @@
                 </div>
             </div>
             </div>
+
+            <!-- Divider P2 vs P3 -->
+            <div class="vs-divider crystal-vs hidden" id="divider-2-3"><span>VS</span></div>
+
+            <!-- Player 3 Crystal -->
+            <div class="player-panel crystal hidden" id="player-panel-3">
+                <div class="panel-header">
+                    <div class="pinfo">
+                        <div class="pavatar crystal-av">★</div>
+                        <input class="player-name" id="name-3" value="Joueur 3" maxlength="14">
+                        <span class="vtag tag-crystal">Crystal</span>
+                    </div>
+                    <div class="pcontrols">
+                        <button class="btn-close-player" id="btn-close-player-3" title="Retirer le joueur 3">✕</button>
+                        <select id="camera-select-3" class="cam-select"><option value="">Caméra...</option></select>
+                        <button class="btn-cam" id="btn-cam-3" title="Caméra (3)">📷</button>
+                        <button class="btn-mirror" id="btn-mirror-3" title="Miroir">⇌</button>
+                    </div>
+                </div>
+                <div class="ds-wrap">
+                    <div class="ds-screen crystal-screen" id="screen-3">
+                        <video id="video-3" autoplay playsinline muted></video>
+                        <div class="no-signal" id="no-signal-3">
+                            <div class="ns-icon">📷</div>
+                            <p>Pas de signal</p>
+                            <span>Clique sur 📷 ou appuie sur <kbd>3</kbd></span>
+                        </div>
+                    </div>
+                    <div class="ds-hinge crystal-hinge"><div class="hinge-dot crystal-dot"></div></div>
+                    <div class="ds-stats">
+                        <span class="stat"><small>RES</small><b id="res-3">—</b></span>
+                        <span class="stat"><small>FPS</small><b id="fps-3">—</b></span>
+                        <span class="stat"><small>STATUS</small><b class="s-off" id="status-3">OFF</b></span>
+                    </div>
+                </div>
+                <!-- Timer P3 -->
+                <div class="timer-container" id="timer-bar-3">
+                    <div class="timer-display">
+                        <span class="timer-icon">⏱</span>
+                        <span class="timer-time" id="timer-val-3">00:00:00</span>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="btn-timer btn-timer-toggle" id="btn-timer-toggle-3" data-player="3" title="Démarrer / Pause">▶</button>
+                        <button class="btn-timer btn-timer-reset" id="btn-timer-reset-3" data-player="3" title="Réinitialiser">↺</button>
+                    </div>
+                </div>
+                <!-- Counter P3 -->
+                <div class="shiny-counter" id="counter-3">
+                    <div class="counter-pokemon" id="counter-poke-3">
+                        <button class="btn-pick-hunt" id="btn-pick-hunt-3" data-player="3">🔍 Choisir le Pokémon chassé</button>
+                    </div>
+                    <div class="counter-controls">
+                        <button class="btn-step minus" id="btn-minus-3" data-player="3">−</button>
+                        <div class="counter-display">
+                            <span class="counter-value" id="count-val-3">0</span>
+                            <span class="counter-label">encounters</span>
+                        </div>
+                        <button class="btn-step plus" id="btn-plus-3" data-player="3">+</button>
+                    </div>
+                    <div class="counter-step-row">
+                        <span class="step-label">Incrément :</span>
+                        <button class="btn-step-preset" data-player="3" data-val="1">+1</button>
+                        <button class="btn-step-preset active" data-player="3" data-val="1" id="preset-active-3">×1</button>
+                        <input type="number" class="step-input" id="step-input-3" value="1" min="1" max="9999">
+                        <button class="btn-reset" id="btn-reset-3" data-player="3" title="Remettre à zéro">↺</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Add Player Card -->
+            <div class="add-player-card" id="add-player-card">
+                <div class="add-icon">+</div>
+                <div class="add-text">AJOUTER UN JOUEUR</div>
+            </div>
         </main>
 
         <!-- Shiny Sidebar -->
@@ -316,6 +390,21 @@
                     <div class="shiny-slot" data-player="2" data-slot="3"><div class="slot-inner"><span class="slot-add">+</span></div></div>
                     <div class="shiny-slot" data-player="2" data-slot="4"><div class="slot-inner"><span class="slot-add">+</span></div></div>
                     <div class="shiny-slot" data-player="2" data-slot="5"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                </div>
+            </div>
+
+            <div class="sidebar-sep hidden" id="sidebar-sep-2-3"></div>
+
+            <!-- Player 3 Shinys -->
+            <div class="shiny-section hidden" id="shiny-section-3">
+                <div class="shiny-player-label crystal-label" id="shiny-label-3">Joueur 3 — Crystal</div>
+                <div class="shiny-grid" id="shiny-grid-3">
+                    <div class="shiny-slot" data-player="3" data-slot="0"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="3" data-slot="1"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="3" data-slot="2"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="3" data-slot="3"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="3" data-slot="4"><div class="slot-inner"><span class="slot-add">+</span></div></div>
+                    <div class="shiny-slot" data-player="3" data-slot="5"><div class="slot-inner"><span class="slot-add">+</span></div></div>
                 </div>
             </div>
         </aside>
