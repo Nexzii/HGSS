@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.6';
+const CURRENT_VERSION = 'v2.7';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
