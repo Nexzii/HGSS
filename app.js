@@ -32,7 +32,7 @@ const $=id=>document.getElementById(id);
 const splash=$('splash-screen'),app=$('app');
 
 // ── LAUNCHER & AUTO-UPDATER ──
-const CURRENT_VERSION = 'v2.8.1';
+const CURRENT_VERSION = 'v2.8.2';
 let activeGameMode = 'duo-vs';
 
 // Auto-Updater Check
@@ -2097,8 +2097,8 @@ function triggerLocalScreamer() {
     }
 
     ytPlayer = new YT.Player('youtube-audio-player', {
-      height: '0',
-      width: '0',
+      height: '200',
+      width: '200',
       playerVars: { 
         'autoplay': 0, 
         'controls': 0,
@@ -2260,7 +2260,10 @@ function triggerLocalScreamer() {
         if (track.ytId.includes('list=')) {
            const listMatch = track.ytId.match(/list=([a-zA-Z0-9_-]+)/);
            if (listMatch) {
-             ytPlayer.loadPlaylist({list: listMatch[1]});
+             ytPlayer.loadPlaylist({
+               list: listMatch[1],
+               listType: 'playlist'
+             });
            } else {
              ytPlayer.loadVideoById(track.ytId);
            }

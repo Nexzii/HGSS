@@ -569,7 +569,9 @@
 
     <!-- Hidden audio engines -->
     <audio id="html5-audio-player" style="display:none;"></audio>
-    <div id="youtube-audio-player" style="display:none;"></div>
+    <div style="position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none;">
+        <div id="youtube-audio-player"></div>
+    </div>
 
     <!-- Pokémon Picker Modal -->
     <div id="modal-picker" class="modal hidden">
